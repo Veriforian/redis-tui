@@ -25,7 +25,7 @@ brew install --cask redis-tui
 │ Filter: user:*                       │ ───────────────────────────────────── │
 │                                      │                                       │
 │  Key                Type     TTL     │ Key: user:1001                        │
-│ ────────────────────────────────── │                                       │
+│ ──────────────────────────────────── │                                       │
 │▶ user:1001          string   ∞       │ Type: string                          │
 │  user:1002          string   1h      │                                       │
 │  user:1003:profile  hash     ∞       │ TTL: No expiry                        │
