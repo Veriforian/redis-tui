@@ -20,6 +20,12 @@ var githubAPIBase = "https://api.github.com"
 
 const githubRepo = "davidbudnick/redis-tui"
 
+// maxDownloadSize is the maximum allowed download size (256 MB).
+const maxDownloadSize = 256 << 20
+
+// maxBinarySize is the maximum allowed extracted binary size (128 MB).
+const maxBinarySize = 128 << 20
+
 type githubRelease struct {
 	TagName string `json:"tag_name"`
 }
@@ -98,8 +104,13 @@ func runUpdate(currentVersion string) error {
 }
 
 func fetchLatestVersion() (string, error) {
-	url := fmt.Sprintf("%s/repos/%s/releases/latest", githubAPIBase, githubRepo)
-	resp, err := http.Get(url)
+	apiURL := fmt.Sprintf("%s/repos/%s/releases/latest", githubAPIBase, githubRepo)
+	req, err := http.NewRequest(http.MethodGet, apiURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("could not create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("HTTP request failed: %w", err)
 	}
@@ -136,8 +147,13 @@ func archiveName(ver, goos, goarch string) string {
 	return fmt.Sprintf("redis-tui_%s_%s_%s.%s", ver, osName, arch, ext)
 }
 
-func downloadFile(url, destPath string) error {
-	resp, err := http.Get(url)
+func downloadFile(rawURL, destPath string) error {
+	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	if err != nil {
+		return fmt.Errorf("could not create request: %w", err)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("HTTP request failed: %w", err)
 	}
@@ -147,13 +163,14 @@ func downloadFile(url, destPath string) error {
 		return fmt.Errorf("download returned status %d", resp.StatusCode)
 	}
 
-	f, err := os.Create(destPath)
+	cleanPath := filepath.Clean(destPath)
+	f, err := os.Create(cleanPath)
 	if err != nil {
 		return fmt.Errorf("could not create file: %w", err)
 	}
 	defer f.Close()
 
-	if _, err := io.Copy(f, resp.Body); err != nil {
+	if _, err := io.Copy(f, io.LimitReader(resp.Body, maxDownloadSize)); err != nil {
 		return fmt.Errorf("could not write file: %w", err)
 	}
 
@@ -161,7 +178,8 @@ func downloadFile(url, destPath string) error {
 }
 
 func verifyChecksum(archivePath, checksumPath, archiveFilename string) error {
-	data, err := os.ReadFile(checksumPath)
+	cleanChecksumPath := filepath.Clean(checksumPath)
+	data, err := os.ReadFile(cleanChecksumPath) // #nosec G304 - path constructed from os.MkdirTemp
 	if err != nil {
 		return fmt.Errorf("could not read checksums file: %w", err)
 	}
@@ -179,7 +197,8 @@ func verifyChecksum(archivePath, checksumPath, archiveFilename string) error {
 		return fmt.Errorf("no checksum found for %s", archiveFilename)
 	}
 
-	f, err := os.Open(archivePath)
+	cleanArchivePath := filepath.Clean(archivePath)
+	f, err := os.Open(cleanArchivePath) // #nosec G304 - path constructed from os.MkdirTemp
 	if err != nil {
 		return fmt.Errorf("could not open archive: %w", err)
 	}
@@ -199,7 +218,8 @@ func verifyChecksum(archivePath, checksumPath, archiveFilename string) error {
 }
 
 func extractBinary(archivePath, destPath string) error {
-	f, err := os.Open(archivePath)
+	cleanArchivePath := filepath.Clean(archivePath)
+	f, err := os.Open(cleanArchivePath) // #nosec G304 - path constructed from os.MkdirTemp
 	if err != nil {
 		return fmt.Errorf("could not open archive: %w", err)
 	}
@@ -222,17 +242,18 @@ func extractBinary(archivePath, destPath string) error {
 		}
 
 		if filepath.Base(hdr.Name) == "redis-tui" && hdr.Typeflag == tar.TypeReg {
-			out, err := os.OpenFile(destPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+			cleanDestPath := filepath.Clean(destPath)
+			out, err := os.OpenFile(cleanDestPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0700) // #nosec G302 - binary must be executable
 			if err != nil {
 				return fmt.Errorf("could not create binary: %w", err)
 			}
-			defer out.Close()
 
-			if _, err := io.Copy(out, tr); err != nil {
+			if _, err := io.Copy(out, io.LimitReader(tr, maxBinarySize)); err != nil {
+				out.Close()
 				return fmt.Errorf("could not write binary: %w", err)
 			}
 
-			return nil
+			return out.Close()
 		}
 	}
 
@@ -273,6 +294,8 @@ func checkWriteAccess(path string) error {
 		return err
 	}
 	name := tmp.Name()
-	tmp.Close()
-	return os.Remove(name)
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Remove(filepath.Clean(name))
 }
