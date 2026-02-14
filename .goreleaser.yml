@@ -97,17 +97,22 @@ release:
     ## What's New in Redis TUI v{{.Version}}
   footer: |
     ## Installation
-    
+
+    ### Quick Install (macOS/Linux)
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/davidbudnick/redis-tui/main/install.sh | bash
+    ```
+
     ### Homebrew (macOS/Linux)
     ```bash
     brew tap davidbudnick/homebrew-tap
     brew install --cask redis-tui
     ```
-    
+
     ### Go Install
     ```bash
     go install github.com/davidbudnick/redis-tui@{{.Tag}}
     ```
-    
+
     ### Binary Download
     Download the appropriate binary for your platform from the assets below.

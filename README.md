@@ -11,16 +11,18 @@ A feature-rich terminal UI for managing Redis databases, built with Go and [Bubb
 ## Quick Install
 
 ```bash
-# Homebrew — recommended (macOS and Linux)
+# Native install — recommended (macOS and Linux)
+curl -fsSL https://raw.githubusercontent.com/davidbudnick/redis-tui/main/install.sh | bash
+
+# Homebrew (macOS and Linux)
 brew tap davidbudnick/homebrew-tap
 brew install --cask redis-tui
-
-# Pre-built binaries
-# Download from https://github.com/davidbudnick/redis-tui/releases
 
 # Go (requires Go 1.26+)
 go install github.com/davidbudnick/redis-tui@latest
 ```
+
+> **Pre-built binaries** — [Download from GitHub Releases](https://github.com/davidbudnick/redis-tui/releases)
 
 ## Screenshots
 ### Key Browser with Preview
@@ -64,6 +66,17 @@ go install github.com/davidbudnick/redis-tui@latest
 - **Lua scripting** — execute Lua scripts directly against the server
 
 ## Installation
+
+### Native Install (Recommended)
+
+The install script auto-detects your OS and architecture, downloads the latest release, verifies the checksum, and installs the binary to `/usr/local/bin` (override with `INSTALL_DIR`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/davidbudnick/redis-tui/main/install.sh | bash
+
+# Custom install directory
+INSTALL_DIR=~/.local/bin curl -fsSL https://raw.githubusercontent.com/davidbudnick/redis-tui/main/install.sh | bash
+```
 
 ### Homebrew
 
@@ -140,6 +153,9 @@ Short flags (`-h`, `-p`, `-a`, `-n`) follow [redis-cli](https://redis.io/docs/la
 ### Uninstall
 
 ```bash
+# Native install
+rm -f /usr/local/bin/redis-tui
+
 # Homebrew
 brew uninstall --cask redis-tui
 
