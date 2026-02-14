@@ -4,7 +4,7 @@ Output "docs/main.gif"
 Require ./bin/redis-tui
 
 Set Shell "zsh"
-Set FontSize 16
+Set FontSize 18
 Set FontFamily "SFMono Nerd Font"
 Set Theme "Dracula"
 Set Width 1920
