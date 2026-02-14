@@ -62,7 +62,7 @@ go install github.com/davidbudnick/redis-tui@latest
 - **Keyspace events** — subscribe to keyspace notifications (set, del, expire, etc.)
 - **Export/Import** — JSON-based key backup and restore
 - **Bulk operations** — pattern-based delete and batch TTL across multiple keys
-- **Pub/Sub** — publish messages to channels and view active channels
+- **Pub/Sub** — browse active channels with subscriber counts and publish messages
 - **Lua scripting** — execute Lua scripts directly against the server
 - **Themes** — switch between color themes
 
@@ -205,7 +205,7 @@ rm -f $(go env GOPATH)/bin/redis-tui
 | `i` | Server info | `Ctrl+X` | View expiring keys |
 | `D` | Switch database | `m` | Live metrics dashboard |
 | `f` | Flush database | `M` | Memory stats |
-| `p` | Pub/Sub publish | `K` | Cluster info |
+| `p` | Pub/Sub channels | `K` | Cluster info |
 | `L` | View slow log | `=` | Compare keys |
 | `E` | Execute Lua script | `P` | Key templates |
 
