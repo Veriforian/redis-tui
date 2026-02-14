@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -14,23 +15,7 @@ import (
 
 // cleanup closes existing connections before establishing a new one
 func (c *Client) cleanup() {
-	if c.keyspacePS != nil {
-		_ = c.keyspacePS.Close()
-		c.keyspacePS = nil
-	}
-	if c.pubsub != nil {
-		_ = c.pubsub.Close()
-		c.pubsub = nil
-	}
-	if c.cluster != nil {
-		_ = c.cluster.Close()
-		c.cluster = nil
-	}
-	if c.client != nil {
-		_ = c.client.Close()
-		c.client = nil
-	}
-	c.isCluster = false
+	_ = c.Disconnect()
 }
 
 // Connect establishes a connection to Redis
@@ -140,21 +125,30 @@ func parseAddr(addr string) (string, int) {
 
 // Disconnect closes the Redis connection
 func (c *Client) Disconnect() error {
-	if c.pubsub != nil {
-		_ = c.pubsub.Close()
+	var errs []error
+	if c.cancelKeyspace != nil {
+		c.cancelKeyspace()
+		c.cancelKeyspace = nil
 	}
 	if c.keyspacePS != nil {
-		_ = c.keyspacePS.Close()
+		errs = append(errs, c.keyspacePS.Close())
+		c.keyspacePS = nil
 	}
-	var err error
+	if c.pubsub != nil {
+		errs = append(errs, c.pubsub.Close())
+		c.pubsub = nil
+	}
 	if c.cluster != nil {
-		err = c.cluster.Close()
+		errs = append(errs, c.cluster.Close())
+		c.cluster = nil
 	}
 	if c.client != nil {
-		err = c.client.Close()
+		errs = append(errs, c.client.Close())
+		c.client = nil
 	}
 	c.isCluster = false
-	return err
+	c.eventHandlers = nil
+	return errors.Join(errs...)
 }
 
 // IsCluster returns whether connected to a cluster

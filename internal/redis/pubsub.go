@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,12 @@ func (c *Client) SubscribeKeyspace(pattern string, handler func(types.KeyspaceEv
 		_ = c.client.ConfigSet(c.ctx, "notify-keyspace-events", "KEA").Err()
 	}
 
+	// Cancel previous goroutine if any
+	if c.cancelKeyspace != nil {
+		c.cancelKeyspace()
+		c.cancelKeyspace = nil
+	}
+
 	// Close existing subscription if any to prevent leaks
 	if c.keyspacePS != nil {
 		_ = c.keyspacePS.Close()
@@ -45,24 +52,42 @@ func (c *Client) SubscribeKeyspace(pattern string, handler func(types.KeyspaceEv
 	// Clear old handlers to prevent memory leak and duplicate events
 	c.eventHandlers = []func(types.KeyspaceEvent){handler}
 
-	channel := "__keyspace@" + strconv.Itoa(c.db) + "__:" + pattern
+	// Snapshot db for goroutine
+	db := c.db
+	handlers := c.eventHandlers
+
+	channel := "__keyspace@" + strconv.Itoa(db) + "__:" + pattern
 	if c.isCluster {
 		c.keyspacePS = c.cluster.PSubscribe(c.ctx, channel)
 	} else {
 		c.keyspacePS = c.client.PSubscribe(c.ctx, channel)
 	}
 
+	ctx, cancel := context.WithCancel(c.ctx)
+	c.cancelKeyspace = cancel
+
+	// Capture keyspacePS locally so the goroutine does not race with re-subscribe
+	ps := c.keyspacePS
+
 	go func() {
-		ch := c.keyspacePS.Channel()
-		for msg := range ch {
-			event := types.KeyspaceEvent{
-				Timestamp: time.Now(),
-				DB:        c.db,
-				Event:     msg.Payload,
-				Key:       strings.TrimPrefix(msg.Channel, "__keyspace@"+strconv.Itoa(c.db)+"__:"),
-			}
-			for _, h := range c.eventHandlers {
-				h(event)
+		ch := ps.Channel()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-ch:
+				if !ok {
+					return
+				}
+				event := types.KeyspaceEvent{
+					Timestamp: time.Now(),
+					DB:        db,
+					Event:     msg.Payload,
+					Key:       strings.TrimPrefix(msg.Channel, "__keyspace@"+strconv.Itoa(db)+"__:"),
+				}
+				for _, h := range handlers {
+					h(event)
+				}
 			}
 		}
 	}()
@@ -72,8 +97,14 @@ func (c *Client) SubscribeKeyspace(pattern string, handler func(types.KeyspaceEv
 
 // UnsubscribeKeyspace unsubscribes from keyspace notifications
 func (c *Client) UnsubscribeKeyspace() error {
+	if c.cancelKeyspace != nil {
+		c.cancelKeyspace()
+		c.cancelKeyspace = nil
+	}
 	if c.keyspacePS != nil {
-		return c.keyspacePS.Close()
+		err := c.keyspacePS.Close()
+		c.keyspacePS = nil
+		return err
 	}
 	return nil
 }

@@ -162,7 +162,9 @@ func (m Model) handleLiveMetricsMsg(msg types.LiveMetricsMsg) (tea.Model, tea.Cm
 	}
 	m.LiveMetrics.DataPoints = append(m.LiveMetrics.DataPoints, msg.Data)
 	if len(m.LiveMetrics.DataPoints) > m.LiveMetrics.MaxDataPoints {
-		m.LiveMetrics.DataPoints = m.LiveMetrics.DataPoints[1:]
+		newPoints := make([]types.LiveMetricsData, m.LiveMetrics.MaxDataPoints)
+		copy(newPoints, m.LiveMetrics.DataPoints[1:])
+		m.LiveMetrics.DataPoints = newPoints
 	}
 	m.LiveMetricsActive = true
 	m.Screen = types.ScreenLiveMetrics

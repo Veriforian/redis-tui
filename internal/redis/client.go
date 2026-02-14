@@ -29,10 +29,11 @@ type Client struct {
 	password string
 	db       int
 
-	isCluster     bool
-	pubsub        *redis.PubSub
-	keyspacePS    *redis.PubSub
-	eventHandlers []func(types.KeyspaceEvent)
+	isCluster      bool
+	pubsub         *redis.PubSub
+	keyspacePS     *redis.PubSub
+	eventHandlers  []func(types.KeyspaceEvent)
+	cancelKeyspace context.CancelFunc
 }
 
 func (c *Client) cmdable() redis.Cmdable {
