@@ -11,11 +11,14 @@ A feature-rich terminal UI for managing Redis databases, built with Go and [Bubb
 ## Quick Install
 
 ```bash
-# Homebrew (macOS and Linux)
+# Homebrew — recommended (macOS and Linux)
 brew tap davidbudnick/homebrew-tap
 brew install --cask redis-tui
 
-# Go
+# Pre-built binaries
+# Download from https://github.com/davidbudnick/redis-tui/releases
+
+# Go (requires Go 1.26+)
 go install github.com/davidbudnick/redis-tui@latest
 ```
 
@@ -104,16 +107,20 @@ go install github.com/davidbudnick/redis-tui@latest
 - **SSH tunneling** for secure remote access
 - **Connection groups** to organize instances
 - **Database switching** between Redis databases (0-15)
+- **Cluster support** — connect to any cluster node and press `C` to view all nodes, their roles (master/replica), slot ranges, and link state
 
 ### Monitoring and Operations
-- **Live metrics dashboard** — real-time ops/sec, memory, and network I/O with ASCII charts
-- **Server info, memory stats, slow log, and client list**
-- **Cluster support** — view cluster node information
-- **Watch mode** — monitor key values for changes in real-time
-- **Keyspace events** — subscribe to keyspace notifications
+- **Live metrics dashboard** — real-time ops/sec, memory, network I/O, hit rate, and client count with scrolling ASCII charts
+- **Server info** — version, mode, OS, uptime, memory, and connected clients
+- **Memory stats** — detailed usage breakdown and top keys by memory consumption
+- **Slow log** — view slow query entries with execution time and command details
+- **Client list** — view all connected Redis clients with address, age, and command info
+- **Watch mode** — monitor key values for changes in real-time with configurable interval
+- **Keyspace events** — subscribe to keyspace notifications (set, del, expire, etc.)
 - **Export/Import** — JSON-based key backup and restore
-- **Bulk operations** — pattern-based delete and batch TTL
-- **Pub/Sub and Lua scripting**
+- **Bulk operations** — pattern-based delete and batch TTL across multiple keys
+- **Pub/Sub** — publish messages to channels and view active channels
+- **Lua scripting** — execute Lua scripts directly against the server
 
 ## Installation
 
@@ -135,15 +142,17 @@ make build
 make install
 ```
 
+### Pre-built Binaries
+
+Download the latest release from the [Releases](https://github.com/davidbudnick/redis-tui/releases) page. Pre-built binaries are available for macOS, Linux, and Windows with no Go installation required.
+
 ### Using Go Install
+
+> **Note:** Requires Go 1.26 or later.
 
 ```bash
 go install github.com/davidbudnick/redis-tui@latest
 ```
-
-### Pre-built Binaries
-
-Download the latest release from the [Releases](https://github.com/davidbudnick/redis-tui/releases) page.
 
 ## Usage
 
@@ -294,7 +303,7 @@ Keybindings can be customized in the configuration file under the `key_bindings`
 
 ## Requirements
 
-- Go 1.21 or later (for building from source)
+- Go 1.26 or later (for building from source or `go install`)
 - A terminal that supports 256 colors
 - Redis server 4.0 or later
 
