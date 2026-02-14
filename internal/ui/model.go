@@ -168,6 +168,12 @@ type Model struct {
 	LiveMetrics       *types.LiveMetrics
 	LiveMetricsActive bool
 
+	// Redis config
+	RedisConfigParams  []types.RedisConfigParam
+	SelectedConfigIdx  int
+	ConfigEditInput    textinput.Model
+	EditingConfigParam string
+
 	// Connection error (for prominent display)
 	ConnectionError string
 
@@ -213,6 +219,7 @@ func NewModel() Model {
 		CompareKey1Input:   createTextInput("First key", 40),
 		CompareKey2Input:   createTextInput("Second key", 40),
 		JSONPathInput:      createTextInput("JSONPath expression (e.g., $.name)", 40),
+		ConfigEditInput:    createTextInput("New value", 50),
 		inputsInitialized:  true,
 	}
 }

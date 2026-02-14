@@ -749,6 +749,28 @@ func (c *Commands) UnsubscribeKeyspace() tea.Cmd {
 	}
 }
 
+// Redis config commands
+
+func (c *Commands) LoadRedisConfig(pattern string) tea.Cmd {
+	return func() tea.Msg {
+		if c.redis == nil {
+			return types.ConfigLoadedMsg{Err: nil}
+		}
+		params, err := c.redis.ConfigGet(pattern)
+		return types.ConfigLoadedMsg{Params: params, Err: err}
+	}
+}
+
+func (c *Commands) SetRedisConfig(param, value string) tea.Cmd {
+	return func() tea.Msg {
+		if c.redis == nil {
+			return types.ConfigSetMsg{Param: param, Value: value, Err: nil}
+		}
+		err := c.redis.ConfigSet(param, value)
+		return types.ConfigSetMsg{Param: param, Value: value, Err: err}
+	}
+}
+
 // Tree view commands
 
 func (c *Commands) LoadKeyPrefixes(separator string, maxDepth int) tea.Cmd {

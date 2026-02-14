@@ -341,6 +341,19 @@ type KeyComparison struct {
 	Differences []string
 }
 
+// ConfigLoadedMsg is sent when Redis CONFIG GET completes
+type ConfigLoadedMsg struct {
+	Params map[string]string
+	Err    error
+}
+
+// ConfigSetMsg is sent when Redis CONFIG SET completes
+type ConfigSetMsg struct {
+	Param string
+	Value string
+	Err   error
+}
+
 // EditorSaveMsg is sent when user saves in vim editor (:w)
 type EditorSaveMsg struct {
 	Content string

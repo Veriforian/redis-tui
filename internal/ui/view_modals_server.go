@@ -141,6 +141,62 @@ func (m Model) viewPubSub() string {
 	return m.renderModal(b.String())
 }
 
+func (m Model) viewRedisConfig() string {
+	var b strings.Builder
+
+	b.WriteString(titleStyle.Render("Redis Config"))
+	b.WriteString("\n\n")
+
+	if len(m.RedisConfigParams) == 0 {
+		b.WriteString(dimStyle.Render("No config parameters found."))
+	} else {
+		visibleRows := m.Height - 12
+		if visibleRows < 5 {
+			visibleRows = 5
+		}
+
+		start := 0
+		if m.SelectedConfigIdx >= visibleRows {
+			start = m.SelectedConfigIdx - visibleRows + 1
+		}
+		end := start + visibleRows
+		if end > len(m.RedisConfigParams) {
+			end = len(m.RedisConfigParams)
+		}
+
+		for i := start; i < end; i++ {
+			param := m.RedisConfigParams[i]
+			cursor := "  "
+			if i == m.SelectedConfigIdx {
+				cursor = "> "
+			}
+
+			if m.EditingConfigParam != "" && i == m.SelectedConfigIdx {
+				line := fmt.Sprintf("%s%s = ", cursor, param.Name)
+				b.WriteString(selectedStyle.Render(line))
+				b.WriteString(m.ConfigEditInput.View())
+			} else {
+				line := fmt.Sprintf("%s%s = %s", cursor, param.Name, param.Value)
+				if i == m.SelectedConfigIdx {
+					b.WriteString(selectedStyle.Render(line))
+				} else {
+					b.WriteString(normalStyle.Render(line))
+				}
+			}
+			b.WriteString("\n")
+		}
+	}
+
+	b.WriteString("\n")
+	if m.EditingConfigParam != "" {
+		b.WriteString(helpStyle.Render("enter:save  esc:cancel"))
+	} else {
+		b.WriteString(helpStyle.Render("e:edit  r:refresh  esc:back"))
+	}
+
+	return m.renderModalWide(b.String())
+}
+
 func (m Model) viewSwitchDB() string {
 	var b strings.Builder
 

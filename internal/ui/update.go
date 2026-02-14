@@ -138,6 +138,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.CompareKeysResultMsg:
 		return m.handleCompareKeysResultMsg(msg)
 
+	// Redis Config
+	case types.ConfigLoadedMsg:
+		return m.handleConfigLoadedMsg(msg)
+	case types.ConfigSetMsg:
+		return m.handleConfigSetMsg(msg)
+
 	// Live Metrics
 	case types.LiveMetricsMsg:
 		return m.handleLiveMetricsMsg(msg)
@@ -339,6 +345,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleLiveMetricsScreen(msg)
 	case types.ScreenPubSubChannels:
 		return m.handlePubSubChannelsScreen(msg)
+	case types.ScreenRedisConfig:
+		return m.handleRedisConfigScreen(msg)
 	}
 	return m, nil
 }

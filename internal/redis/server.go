@@ -308,6 +308,16 @@ func (c *Client) ClusterInfo() (string, error) {
 	return c.client.ClusterInfo(c.ctx).Result()
 }
 
+// ConfigGet returns Redis server configuration parameters matching the pattern
+func (c *Client) ConfigGet(pattern string) (map[string]string, error) {
+	return c.cmdable().ConfigGet(c.ctx, pattern).Result()
+}
+
+// ConfigSet sets a Redis server configuration parameter
+func (c *Client) ConfigSet(param, value string) error {
+	return c.cmdable().ConfigSet(c.ctx, param, value).Err()
+}
+
 // GetLiveMetrics returns real-time server metrics
 func (c *Client) GetLiveMetrics() (types.LiveMetricsData, error) {
 	info, err := c.cmdable().Info(c.ctx, "stats", "memory", "clients", "cpu").Result()

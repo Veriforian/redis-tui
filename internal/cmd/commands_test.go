@@ -1228,6 +1228,79 @@ func TestLoadKeyPrefixes(t *testing.T) {
 	})
 }
 
+func TestLoadRedisConfig(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.ConfigGetResult = map[string]string{"maxmemory": "0", "hz": "10"}
+		msg := cmds.LoadRedisConfig("*")()
+		result := msg.(types.ConfigLoadedMsg)
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
+		}
+		if len(result.Params) != 2 {
+			t.Errorf("expected 2 params, got %d", len(result.Params))
+		}
+		if result.Params["maxmemory"] != "0" {
+			t.Errorf("maxmemory = %q, want %q", result.Params["maxmemory"], "0")
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.ConfigGetError = errors.New("config error")
+		msg := cmds.LoadRedisConfig("*")()
+		result := msg.(types.ConfigLoadedMsg)
+		if result.Err == nil {
+			t.Error("expected error")
+		}
+	})
+
+	t.Run("nil redis", func(t *testing.T) {
+		cmds := NewCommands(nil, nil)
+		msg := cmds.LoadRedisConfig("*")()
+		result := msg.(types.ConfigLoadedMsg)
+		if result.Err != nil {
+			t.Errorf("nil redis should not error: %v", result.Err)
+		}
+	})
+}
+
+func TestSetRedisConfig(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		cmds, _ := newMockCmds()
+		msg := cmds.SetRedisConfig("hz", "20")()
+		result := msg.(types.ConfigSetMsg)
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
+		}
+		if result.Param != "hz" {
+			t.Errorf("Param = %q, want %q", result.Param, "hz")
+		}
+		if result.Value != "20" {
+			t.Errorf("Value = %q, want %q", result.Value, "20")
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.ConfigSetError = errors.New("config set error")
+		msg := cmds.SetRedisConfig("hz", "bad")()
+		result := msg.(types.ConfigSetMsg)
+		if result.Err == nil {
+			t.Error("expected error")
+		}
+	})
+
+	t.Run("nil redis", func(t *testing.T) {
+		cmds := NewCommands(nil, nil)
+		msg := cmds.SetRedisConfig("hz", "10")()
+		result := msg.(types.ConfigSetMsg)
+		if result.Err != nil {
+			t.Errorf("nil redis should not error: %v", result.Err)
+		}
+	})
+}
+
 func TestCollectionErrors(t *testing.T) {
 	tests := []struct {
 		name    string

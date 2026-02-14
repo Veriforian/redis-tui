@@ -262,6 +262,52 @@ func (m Model) handlePubSubChannelsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) handleRedisConfigScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.EditingConfigParam != "" {
+		switch msg.String() {
+		case "enter":
+			m.Loading = true
+			param := m.EditingConfigParam
+			value := m.ConfigEditInput.Value()
+			m.EditingConfigParam = ""
+			m.ConfigEditInput.Blur()
+			return m, cmd.SetRedisConfigCmd(param, value)
+		case "esc":
+			m.EditingConfigParam = ""
+			m.ConfigEditInput.Blur()
+		default:
+			var inputCmd tea.Cmd
+			m.ConfigEditInput, inputCmd = m.ConfigEditInput.Update(msg)
+			return m, inputCmd
+		}
+		return m, nil
+	}
+
+	switch msg.String() {
+	case "up", "k":
+		if m.SelectedConfigIdx > 0 {
+			m.SelectedConfigIdx--
+		}
+	case "down", "j":
+		if m.SelectedConfigIdx < len(m.RedisConfigParams)-1 {
+			m.SelectedConfigIdx++
+		}
+	case "e", "enter":
+		if len(m.RedisConfigParams) > 0 && m.SelectedConfigIdx < len(m.RedisConfigParams) {
+			param := m.RedisConfigParams[m.SelectedConfigIdx]
+			m.EditingConfigParam = param.Name
+			m.ConfigEditInput.SetValue(param.Value)
+			m.ConfigEditInput.Focus()
+		}
+	case "r":
+		m.Loading = true
+		return m, cmd.LoadRedisConfigCmd("*")
+	case "esc":
+		m.Screen = types.ScreenKeys
+	}
+	return m, nil
+}
+
 func (m Model) handleLiveMetricsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "c":

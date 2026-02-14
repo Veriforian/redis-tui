@@ -176,6 +176,12 @@ type LiveMetricsData struct {
 	RejectedConns    int64
 }
 
+// RedisConfigParam represents a Redis configuration parameter for ordered display
+type RedisConfigParam struct {
+	Name  string
+	Value string
+}
+
 // LiveMetrics holds historical metrics for charting
 type LiveMetrics struct {
 	DataPoints      []LiveMetricsData

@@ -123,6 +123,8 @@ func (m *mockCloseableRedis) SubscribeKeyspace(_ string, _ func(types.KeyspaceEv
 	return nil
 }
 func (m *mockCloseableRedis) UnsubscribeKeyspace() error                        { return nil }
+func (m *mockCloseableRedis) ConfigGet(_ string) (map[string]string, error)   { return nil, nil }
+func (m *mockCloseableRedis) ConfigSet(_, _ string) error                     { return nil }
 func (m *mockCloseableRedis) ExportKeys(_ string) (map[string]any, error)     { return nil, nil }
 func (m *mockCloseableRedis) ImportKeys(_ map[string]any) (int, error)        { return 0, nil }
 

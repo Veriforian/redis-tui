@@ -26,6 +26,7 @@ type FullMockRedisClient struct {
 	EvalResult            interface{}
 	PublishResult         int64
 	PubSubChannelsResult  []string
+	ConfigGetResult       map[string]string
 	ExportResult          map[string]interface{}
 	ImportResult          int
 	BulkDeleteResult      int
@@ -68,6 +69,8 @@ type FullMockRedisClient struct {
 	EvalError              error
 	PublishError           error
 	PubSubChannelsError    error
+	ConfigGetError         error
+	ConfigSetError         error
 	ExportError            error
 	ImportError            error
 	RenameError            error
@@ -329,6 +332,18 @@ func (m *FullMockRedisClient) Subscribe(_ string) *redis.PubSub {
 func (m *FullMockRedisClient) PubSubChannels(_ string) ([]string, error) {
 	m.Calls = append(m.Calls, "PubSubChannels")
 	return m.PubSubChannelsResult, m.PubSubChannelsError
+}
+
+// Config operations
+
+func (m *FullMockRedisClient) ConfigGet(_ string) (map[string]string, error) {
+	m.Calls = append(m.Calls, "ConfigGet")
+	return m.ConfigGetResult, m.ConfigGetError
+}
+
+func (m *FullMockRedisClient) ConfigSet(_, _ string) error {
+	m.Calls = append(m.Calls, "ConfigSet")
+	return m.ConfigSetError
 }
 
 // Keyspace events

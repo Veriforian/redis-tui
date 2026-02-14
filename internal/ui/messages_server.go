@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -111,6 +112,35 @@ func (m Model) handlePubSubChannelsLoadedMsg(msg types.PubSubChannelsLoadedMsg) 
 	m.SelectedChannelIdx = 0
 	m.Screen = types.ScreenPubSubChannels
 	return m, nil
+}
+
+func (m Model) handleConfigLoadedMsg(msg types.ConfigLoadedMsg) (tea.Model, tea.Cmd) {
+	m.Loading = false
+	if msg.Err != nil {
+		m.StatusMsg = "Error: " + msg.Err.Error()
+		return m, nil
+	}
+	params := make([]types.RedisConfigParam, 0, len(msg.Params))
+	for name, value := range msg.Params {
+		params = append(params, types.RedisConfigParam{Name: name, Value: value})
+	}
+	sort.Slice(params, func(i, j int) bool {
+		return params[i].Name < params[j].Name
+	})
+	m.RedisConfigParams = params
+	m.SelectedConfigIdx = 0
+	m.Screen = types.ScreenRedisConfig
+	return m, nil
+}
+
+func (m Model) handleConfigSetMsg(msg types.ConfigSetMsg) (tea.Model, tea.Cmd) {
+	m.Loading = false
+	if msg.Err != nil {
+		m.StatusMsg = "Error: " + msg.Err.Error()
+		return m, nil
+	}
+	m.StatusMsg = fmt.Sprintf("Config updated: %s = %s", msg.Param, msg.Value)
+	return m, cmd.LoadRedisConfigCmd("*")
 }
 
 // Script and Pub/Sub handlers

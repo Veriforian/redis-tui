@@ -53,6 +53,7 @@ func (m Model) getScreenView() string {
 		types.ScreenExpiringKeys:         m.viewExpiringKeys,
 		types.ScreenLiveMetrics:          m.viewLiveMetrics,
 		types.ScreenPubSubChannels:       m.viewPubSubChannels,
+		types.ScreenRedisConfig:          m.viewRedisConfig,
 	}
 
 	if viewFunc, ok := viewMap[m.Screen]; ok {

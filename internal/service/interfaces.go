@@ -120,6 +120,10 @@ type RedisService interface {
 	SlowLogGet(count int64) ([]types.SlowLogEntry, error)
 	ClientList() ([]types.ClientInfo, error)
 
+	// Config operations
+	ConfigGet(pattern string) (map[string]string, error)
+	ConfigSet(param, value string) error
+
 	// Cluster operations
 	ClusterNodes() ([]types.ClusterNode, error)
 	ClusterInfo() (string, error)

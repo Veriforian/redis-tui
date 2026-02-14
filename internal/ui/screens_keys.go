@@ -248,6 +248,9 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.Screen = types.ScreenTreeView
 		m.Loading = true
 		return m, cmd.LoadKeyPrefixesCmd(m.TreeSeparator, 3)
+	case "ctrl+g":
+		m.Loading = true
+		return m, cmd.LoadRedisConfigCmd("*")
 	case "ctrl+x":
 		var expiring []types.RedisKey
 		for _, k := range m.Keys {
