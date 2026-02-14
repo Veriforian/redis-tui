@@ -64,6 +64,18 @@ internal/
 - `alicebob/miniredis/v2` — In-memory Redis for tests
 - `alecthomas/chroma/v2` — Syntax highlighting
 
+## Git Conventions
+
+- **Conventional commits**: `feat:`, `fix:`, `docs:`, `test:`, `perf:`, `refactor:`, `chore:`
+- Keep subject line under 50 characters, imperative mood
+
+## Guardrails
+
+- All Redis operations must go through `internal/redis/` — never use `go-redis` directly elsewhere
+- Config schema changes in `internal/db/` must be backward-compatible with existing `~/.redis/config.json` files
+- All new command methods must go through the `Commands` struct with injected services — no global state
+- New message types must follow the `Msg` suffix convention and be defined in the appropriate `messages_*.go` file
+
 ## Release
 
 - GoReleaser v2.13.1 builds for Linux/macOS/Windows (amd64/arm64)
