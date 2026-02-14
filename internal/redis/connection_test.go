@@ -1,6 +1,11 @@
 package redis
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+)
 
 func TestParseAddr(t *testing.T) {
 	tests := []struct {
@@ -29,5 +34,162 @@ func TestParseAddr(t *testing.T) {
 				t.Errorf("parseAddr(%q) port = %d, want %d", tt.addr, port, tt.expectedPort)
 			}
 		})
+	}
+}
+
+func TestConnect(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+
+	client := NewClient()
+	port, _ := strconv.Atoi(mr.Port())
+
+	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+		t.Fatalf("Connect() returned error: %v", err)
+	}
+	t.Cleanup(func() { _ = client.Disconnect() })
+
+	// Verify the client is usable by setting and getting a key
+	mr.Set("testkey", "testval")
+	got, err := client.client.Get(client.ctx, "testkey").Result()
+	if err != nil {
+		t.Fatalf("Get after Connect failed: %v", err)
+	}
+	if got != "testval" {
+		t.Errorf("Get = %q, want %q", got, "testval")
+	}
+}
+
+func TestDisconnect(t *testing.T) {
+	t.Run("disconnect after connect", func(t *testing.T) {
+		mr, err := miniredis.Run()
+		if err != nil {
+			t.Fatalf("failed to start miniredis: %v", err)
+		}
+		t.Cleanup(mr.Close)
+
+		client := NewClient()
+		port, _ := strconv.Atoi(mr.Port())
+
+		if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+			t.Fatalf("Connect() returned error: %v", err)
+		}
+
+		if err := client.Disconnect(); err != nil {
+			t.Fatalf("Disconnect() returned error: %v", err)
+		}
+
+		if client.client != nil {
+			t.Error("client.client should be nil after Disconnect")
+		}
+		if client.isCluster {
+			t.Error("client.isCluster should be false after Disconnect")
+		}
+	})
+
+	t.Run("disconnect on fresh client", func(t *testing.T) {
+		client := NewClient()
+		if err := client.Disconnect(); err != nil {
+			t.Errorf("Disconnect() on fresh client returned error: %v", err)
+		}
+	})
+}
+
+func TestSelectDB(t *testing.T) {
+	t.Run("select db succeeds", func(t *testing.T) {
+		client, _ := setupTestClient(t)
+
+		if err := client.SelectDB(1); err != nil {
+			t.Fatalf("SelectDB(1) returned error: %v", err)
+		}
+		if client.db != 1 {
+			t.Errorf("client.db = %d, want 1", client.db)
+		}
+	})
+
+	t.Run("select db on cluster returns error", func(t *testing.T) {
+		client, _ := setupTestClient(t)
+		client.isCluster = true
+
+		err := client.SelectDB(1)
+		if err == nil {
+			t.Fatal("SelectDB on cluster should return error")
+		}
+		if err.Error() != "database selection not supported in cluster mode" {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("select db on nil client returns error", func(t *testing.T) {
+		client := NewClient()
+
+		err := client.SelectDB(1)
+		if err == nil {
+			t.Fatal("SelectDB on nil client should return error")
+		}
+		if err.Error() != "not connected" {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+}
+
+func TestCleanup(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+
+	client := NewClient()
+	port, _ := strconv.Atoi(mr.Port())
+
+	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+		t.Fatalf("Connect() returned error: %v", err)
+	}
+
+	client.cleanup()
+
+	if client.client != nil {
+		t.Error("client.client should be nil after cleanup")
+	}
+}
+
+func TestReconnectCycle(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+
+	client := NewClient()
+	port, _ := strconv.Atoi(mr.Port())
+
+	// First connect
+	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+		t.Fatalf("first Connect() returned error: %v", err)
+	}
+
+	// Disconnect
+	if err := client.Disconnect(); err != nil {
+		t.Fatalf("Disconnect() returned error: %v", err)
+	}
+
+	// Reconnect
+	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+		t.Fatalf("second Connect() returned error: %v", err)
+	}
+	t.Cleanup(func() { _ = client.Disconnect() })
+
+	// Verify it works after reconnect
+	mr.Set("reconnectkey", "reconnectval")
+	got, err := client.client.Get(client.ctx, "reconnectkey").Result()
+	if err != nil {
+		t.Fatalf("Get after reconnect failed: %v", err)
+	}
+	if got != "reconnectval" {
+		t.Errorf("Get = %q, want %q", got, "reconnectval")
 	}
 }

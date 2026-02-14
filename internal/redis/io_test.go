@@ -1,0 +1,649 @@
+package redis
+
+import (
+	"sort"
+	"testing"
+	"time"
+)
+
+// ---------------------------------------------------------------------------
+// ExportKeys tests
+// ---------------------------------------------------------------------------
+
+func TestExportKeys_AllTypes(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	// Set up all five key types.
+	mr.Set("str", "hello")
+	mr.RPush("lst", "a", "b", "c")
+	mr.SAdd("st", "x", "y", "z")
+	mr.ZAdd("zs", 1.0, "alpha")
+	mr.ZAdd("zs", 2.5, "beta")
+	mr.HSet("hs", "f1", "v1")
+	mr.HSet("hs", "f2", "v2")
+
+	result, err := client.ExportKeys("*")
+	if err != nil {
+		t.Fatalf("ExportKeys returned error: %v", err)
+	}
+
+	// All five keys must be present.
+	for _, key := range []string{"str", "lst", "st", "zs", "hs"} {
+		if _, ok := result[key]; !ok {
+			t.Errorf("expected key %q in export result", key)
+		}
+	}
+
+	// -- string --
+	strData := result["str"].(map[string]interface{})
+	if strData["type"] != "string" {
+		t.Errorf("str type = %v, want string", strData["type"])
+	}
+	if strData["value"] != "hello" {
+		t.Errorf("str value = %v, want hello", strData["value"])
+	}
+
+	// -- list --
+	lstData := result["lst"].(map[string]interface{})
+	if lstData["type"] != "list" {
+		t.Errorf("lst type = %v, want list", lstData["type"])
+	}
+	listVals, ok := lstData["value"].([]string)
+	if !ok {
+		t.Fatalf("lst value is not []string, got %T", lstData["value"])
+	}
+	if len(listVals) != 3 || listVals[0] != "a" || listVals[1] != "b" || listVals[2] != "c" {
+		t.Errorf("lst value = %v, want [a b c]", listVals)
+	}
+
+	// -- set --
+	stData := result["st"].(map[string]interface{})
+	if stData["type"] != "set" {
+		t.Errorf("st type = %v, want set", stData["type"])
+	}
+	setVals, ok := stData["value"].([]string)
+	if !ok {
+		t.Fatalf("st value is not []string, got %T", stData["value"])
+	}
+	sort.Strings(setVals)
+	if len(setVals) != 3 || setVals[0] != "x" || setVals[1] != "y" || setVals[2] != "z" {
+		t.Errorf("st value = %v, want [x y z]", setVals)
+	}
+
+	// -- zset --
+	zsData := result["zs"].(map[string]interface{})
+	if zsData["type"] != "zset" {
+		t.Errorf("zs type = %v, want zset", zsData["type"])
+	}
+	zsVals, ok := zsData["value"].([]map[string]interface{})
+	if !ok {
+		t.Fatalf("zs value is not []map[string]interface{}, got %T", zsData["value"])
+	}
+	if len(zsVals) != 2 {
+		t.Fatalf("zs value length = %d, want 2", len(zsVals))
+	}
+	// ZRangeWithScores returns sorted by score ascending.
+	if zsVals[0]["member"] != "alpha" || zsVals[0]["score"] != 1.0 {
+		t.Errorf("zs[0] = %v, want {member:alpha score:1}", zsVals[0])
+	}
+	if zsVals[1]["member"] != "beta" || zsVals[1]["score"] != 2.5 {
+		t.Errorf("zs[1] = %v, want {member:beta score:2.5}", zsVals[1])
+	}
+
+	// -- hash --
+	hsData := result["hs"].(map[string]interface{})
+	if hsData["type"] != "hash" {
+		t.Errorf("hs type = %v, want hash", hsData["type"])
+	}
+	hashVals, ok := hsData["value"].(map[string]string)
+	if !ok {
+		t.Fatalf("hs value is not map[string]string, got %T", hsData["value"])
+	}
+	if hashVals["f1"] != "v1" || hashVals["f2"] != "v2" {
+		t.Errorf("hs value = %v, want {f1:v1 f2:v2}", hashVals)
+	}
+}
+
+func TestExportKeys_WithTTL(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	mr.Set("ttlkey", "val")
+	mr.SetTTL("ttlkey", 60*time.Second)
+
+	result, err := client.ExportKeys("*")
+	if err != nil {
+		t.Fatalf("ExportKeys returned error: %v", err)
+	}
+
+	keyData, ok := result["ttlkey"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("ttlkey not found or wrong type in export")
+	}
+
+	ttl, ok := keyData["ttl"].(float64)
+	if !ok {
+		t.Fatalf("ttl is not float64, got %T", keyData["ttl"])
+	}
+	// Allow some tolerance: should be ~60 seconds.
+	if ttl < 55 || ttl > 65 {
+		t.Errorf("ttl = %v, want ~60", ttl)
+	}
+}
+
+func TestExportKeys_EmptyDB(t *testing.T) {
+	client, _ := setupTestClient(t)
+
+	result, err := client.ExportKeys("*")
+	if err != nil {
+		t.Fatalf("ExportKeys returned error: %v", err)
+	}
+
+	if len(result) != 0 {
+		t.Errorf("expected empty map, got %d keys", len(result))
+	}
+}
+
+func TestExportKeys_Pattern(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	mr.Set("user:1", "alice")
+	mr.Set("user:2", "bob")
+	mr.Set("session:abc", "data")
+
+	result, err := client.ExportKeys("user:*")
+	if err != nil {
+		t.Fatalf("ExportKeys returned error: %v", err)
+	}
+
+	if len(result) != 2 {
+		t.Errorf("expected 2 keys, got %d", len(result))
+	}
+	if _, ok := result["user:1"]; !ok {
+		t.Error("expected user:1 in result")
+	}
+	if _, ok := result["user:2"]; !ok {
+		t.Error("expected user:2 in result")
+	}
+	if _, ok := result["session:abc"]; ok {
+		t.Error("session:abc should not be in result")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// ImportKeys tests
+// ---------------------------------------------------------------------------
+
+func TestImportKeys_String(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"mystr": map[string]interface{}{
+			"type":  "string",
+			"value": "hello world",
+			"ttl":   float64(30),
+		},
+	}
+
+	count, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+
+	got, err := mr.Get("mystr")
+	if err != nil {
+		t.Fatalf("miniredis Get error: %v", err)
+	}
+	if got != "hello world" {
+		t.Errorf("mystr = %q, want %q", got, "hello world")
+	}
+
+	ttl := mr.TTL("mystr")
+	if ttl < 25*time.Second || ttl > 35*time.Second {
+		t.Errorf("mystr TTL = %v, want ~30s", ttl)
+	}
+}
+
+func TestImportKeys_List(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"mylist": map[string]interface{}{
+			"type":  "list",
+			"value": []interface{}{"a", "b", "c"},
+			"ttl":   float64(0),
+		},
+	}
+
+	count, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+
+	vals, err := mr.List("mylist")
+	if err != nil {
+		t.Fatalf("miniredis List error: %v", err)
+	}
+	if len(vals) != 3 || vals[0] != "a" || vals[1] != "b" || vals[2] != "c" {
+		t.Errorf("mylist = %v, want [a b c]", vals)
+	}
+}
+
+func TestImportKeys_Set(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"myset": map[string]interface{}{
+			"type":  "set",
+			"value": []interface{}{"x", "y", "z"},
+			"ttl":   float64(0),
+		},
+	}
+
+	count, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+
+	members, err := mr.Members("myset")
+	if err != nil {
+		t.Fatalf("miniredis Members error: %v", err)
+	}
+	sort.Strings(members)
+	if len(members) != 3 || members[0] != "x" || members[1] != "y" || members[2] != "z" {
+		t.Errorf("myset = %v, want [x y z]", members)
+	}
+}
+
+func TestImportKeys_ZSet(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"myzset": map[string]interface{}{
+			"type": "zset",
+			"value": []interface{}{
+				map[string]interface{}{"member": "alpha", "score": float64(1.0)},
+				map[string]interface{}{"member": "beta", "score": float64(2.5)},
+			},
+			"ttl": float64(0),
+		},
+	}
+
+	count, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+
+	score1, err := mr.ZScore("myzset", "alpha")
+	if err != nil {
+		t.Fatalf("ZScore alpha error: %v", err)
+	}
+	if score1 != 1.0 {
+		t.Errorf("alpha score = %v, want 1.0", score1)
+	}
+
+	score2, err := mr.ZScore("myzset", "beta")
+	if err != nil {
+		t.Fatalf("ZScore beta error: %v", err)
+	}
+	if score2 != 2.5 {
+		t.Errorf("beta score = %v, want 2.5", score2)
+	}
+}
+
+func TestImportKeys_Hash(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"myhash": map[string]interface{}{
+			"type": "hash",
+			"value": map[string]interface{}{
+				"field1": "val1",
+				"field2": "val2",
+			},
+			"ttl": float64(0),
+		},
+	}
+
+	count, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("count = %d, want 1", count)
+	}
+
+	v1 := mr.HGet("myhash", "field1")
+	if v1 != "val1" {
+		t.Errorf("myhash field1 = %q, want %q", v1, "val1")
+	}
+	v2 := mr.HGet("myhash", "field2")
+	if v2 != "val2" {
+		t.Errorf("myhash field2 = %q, want %q", v2, "val2")
+	}
+}
+
+func TestImportKeys_WithTTL(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	data := map[string]interface{}{
+		"ttlstr": map[string]interface{}{
+			"type":  "string",
+			"value": "expiring",
+			"ttl":   float64(120),
+		},
+	}
+
+	_, err := client.ImportKeys(data)
+	if err != nil {
+		t.Fatalf("ImportKeys returned error: %v", err)
+	}
+
+	ttl := mr.TTL("ttlstr")
+	if ttl < 115*time.Second || ttl > 125*time.Second {
+		t.Errorf("ttlstr TTL = %v, want ~120s", ttl)
+	}
+}
+
+func TestImportKeys_InvalidData(t *testing.T) {
+	client, _ := setupTestClient(t)
+
+	tests := []struct {
+		name string
+		data map[string]interface{}
+	}{
+		{
+			name: "value is not a map",
+			data: map[string]interface{}{
+				"bad": "not a map",
+			},
+		},
+		{
+			name: "missing type field",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"value": "hello",
+				},
+			},
+		},
+		{
+			name: "wrong value type for string",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "string",
+					"value": 12345, // not a string
+				},
+			},
+		},
+		{
+			name: "wrong value type for list",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "list",
+					"value": "not a slice",
+				},
+			},
+		},
+		{
+			name: "wrong value type for set",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "set",
+					"value": 42,
+				},
+			},
+		},
+		{
+			name: "wrong value type for zset",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "zset",
+					"value": "not a slice",
+				},
+			},
+		},
+		{
+			name: "wrong value type for hash",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "hash",
+					"value": []interface{}{"not", "a", "map"},
+				},
+			},
+		},
+		{
+			name: "unknown type",
+			data: map[string]interface{}{
+				"bad": map[string]interface{}{
+					"type":  "unknown",
+					"value": "whatever",
+				},
+			},
+		},
+		{
+			name: "empty data",
+			data: map[string]interface{}{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			count, err := client.ImportKeys(tt.data)
+			if err != nil {
+				t.Errorf("ImportKeys returned unexpected error: %v", err)
+			}
+			if count != 0 {
+				t.Errorf("count = %d, want 0 for invalid data", count)
+			}
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Round-trip test
+// ---------------------------------------------------------------------------
+
+func TestExportImportRoundTrip(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	// Create keys of multiple types.
+	mr.Set("rt:str", "round-trip")
+	mr.RPush("rt:lst", "one", "two", "three")
+	mr.SAdd("rt:set", "m1", "m2")
+	mr.ZAdd("rt:zs", 10, "first")
+	mr.ZAdd("rt:zs", 20, "second")
+	mr.HSet("rt:hs", "k1", "v1")
+	mr.HSet("rt:hs", "k2", "v2")
+
+	// Export.
+	exported, err := client.ExportKeys("rt:*")
+	if err != nil {
+		t.Fatalf("ExportKeys error: %v", err)
+	}
+	if len(exported) != 5 {
+		t.Fatalf("exported %d keys, want 5", len(exported))
+	}
+
+	// Clear.
+	mr.FlushAll()
+
+	// Convert exported data to the format ImportKeys expects.
+	// ExportKeys returns typed Go values ([]string, map[string]string, etc.)
+	// but ImportKeys expects JSON-like interface{} types ([]interface{}, map[string]interface{}).
+	importData := make(map[string]interface{})
+	for key, raw := range exported {
+		keyData := raw.(map[string]interface{})
+		entry := map[string]interface{}{
+			"type": keyData["type"],
+			"ttl":  keyData["ttl"],
+		}
+
+		switch keyData["type"] {
+		case "string":
+			entry["value"] = keyData["value"]
+		case "list":
+			vals := keyData["value"].([]string)
+			iface := make([]interface{}, len(vals))
+			for i, v := range vals {
+				iface[i] = v
+			}
+			entry["value"] = iface
+		case "set":
+			vals := keyData["value"].([]string)
+			iface := make([]interface{}, len(vals))
+			for i, v := range vals {
+				iface[i] = v
+			}
+			entry["value"] = iface
+		case "zset":
+			vals := keyData["value"].([]map[string]interface{})
+			iface := make([]interface{}, len(vals))
+			for i, v := range vals {
+				iface[i] = v
+			}
+			entry["value"] = iface
+		case "hash":
+			vals := keyData["value"].(map[string]string)
+			iface := make(map[string]interface{}, len(vals))
+			for k, v := range vals {
+				iface[k] = v
+			}
+			entry["value"] = iface
+		}
+
+		importData[key] = entry
+	}
+
+	// Import.
+	count, err := client.ImportKeys(importData)
+	if err != nil {
+		t.Fatalf("ImportKeys error: %v", err)
+	}
+	if count != 5 {
+		t.Errorf("imported %d keys, want 5", count)
+	}
+
+	// Verify all keys restored correctly.
+
+	// String
+	strVal, err := mr.Get("rt:str")
+	if err != nil {
+		t.Fatalf("Get rt:str error: %v", err)
+	}
+	if strVal != "round-trip" {
+		t.Errorf("rt:str = %q, want %q", strVal, "round-trip")
+	}
+
+	// List
+	lstVal, err := mr.List("rt:lst")
+	if err != nil {
+		t.Fatalf("List rt:lst error: %v", err)
+	}
+	if len(lstVal) != 3 || lstVal[0] != "one" || lstVal[1] != "two" || lstVal[2] != "three" {
+		t.Errorf("rt:lst = %v, want [one two three]", lstVal)
+	}
+
+	// Set
+	setVal, err := mr.Members("rt:set")
+	if err != nil {
+		t.Fatalf("Members rt:set error: %v", err)
+	}
+	sort.Strings(setVal)
+	if len(setVal) != 2 || setVal[0] != "m1" || setVal[1] != "m2" {
+		t.Errorf("rt:set = %v, want [m1 m2]", setVal)
+	}
+
+	// ZSet
+	score1, err := mr.ZScore("rt:zs", "first")
+	if err != nil {
+		t.Fatalf("ZScore rt:zs first error: %v", err)
+	}
+	if score1 != 10 {
+		t.Errorf("rt:zs first score = %v, want 10", score1)
+	}
+	score2, err := mr.ZScore("rt:zs", "second")
+	if err != nil {
+		t.Fatalf("ZScore rt:zs second error: %v", err)
+	}
+	if score2 != 20 {
+		t.Errorf("rt:zs second score = %v, want 20", score2)
+	}
+
+	// Hash
+	h1 := mr.HGet("rt:hs", "k1")
+	if h1 != "v1" {
+		t.Errorf("rt:hs k1 = %q, want %q", h1, "v1")
+	}
+	h2 := mr.HGet("rt:hs", "k2")
+	if h2 != "v2" {
+		t.Errorf("rt:hs k2 = %q, want %q", h2, "v2")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// CompareKeys tests
+// ---------------------------------------------------------------------------
+
+func TestCompareKeys(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	mr.Set("cmp1", "value-one")
+	mr.Set("cmp2", "value-two")
+
+	val1, val2, err := client.CompareKeys("cmp1", "cmp2")
+	if err != nil {
+		t.Fatalf("CompareKeys returned error: %v", err)
+	}
+
+	if val1.StringValue != "value-one" {
+		t.Errorf("val1 = %q, want %q", val1.StringValue, "value-one")
+	}
+	if val2.StringValue != "value-two" {
+		t.Errorf("val2 = %q, want %q", val2.StringValue, "value-two")
+	}
+}
+
+func TestCompareKeys_MissingKey(t *testing.T) {
+	client, mr := setupTestClient(t)
+
+	mr.Set("exists", "present")
+
+	// When a key does not exist, Redis TYPE returns "none" and GetValue
+	// returns a RedisValue with Type "none" (no error). CompareKeys passes
+	// this through, so we verify the type field reflects the missing key.
+
+	// First key missing.
+	val1, val2, err := client.CompareKeys("nonexistent", "exists")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if val1.Type != "none" {
+		t.Errorf("val1.Type = %q, want %q for missing key", val1.Type, "none")
+	}
+	if val2.StringValue != "present" {
+		t.Errorf("val2.StringValue = %q, want %q", val2.StringValue, "present")
+	}
+
+	// Second key missing.
+	val1, val2, err = client.CompareKeys("exists", "nonexistent")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if val1.StringValue != "present" {
+		t.Errorf("val1.StringValue = %q, want %q", val1.StringValue, "present")
+	}
+	if val2.Type != "none" {
+		t.Errorf("val2.Type = %q, want %q for missing key", val2.Type, "none")
+	}
+}
