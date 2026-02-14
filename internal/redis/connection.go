@@ -34,6 +34,9 @@ func (c *Client) Connect(host string, port int, password string, db int) error {
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
+		PoolSize:     10,
+		MinIdleConns: 3,
+		MaxRetries:   3,
 	})
 
 	ctx, cancel := context.WithTimeout(c.ctx, 5*time.Second)
@@ -59,6 +62,9 @@ func (c *Client) ConnectWithTLS(host string, port int, password string, db int, 
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
+		PoolSize:     10,
+		MinIdleConns: 3,
+		MaxRetries:   3,
 		TLSConfig:    tlsConfig,
 	})
 
@@ -91,10 +97,9 @@ func (c *Client) ConnectCluster(addrs []string, password string) error {
 		DialTimeout:  5 * time.Second,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
-		// Remap discovered cluster node addresses to the seed host.
-		// Cluster nodes advertise internal IPs (e.g. Docker bridge IPs)
-		// that may be unreachable from the client. This dialer keeps the
-		// port but replaces the host with the original seed host.
+		PoolSize:     10,
+		MinIdleConns: 3,
+		MaxRetries:   3,
 		Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			_, port, err := net.SplitHostPort(addr)
 			if err != nil {

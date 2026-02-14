@@ -75,3 +75,20 @@ func (c *Client) HDel(key string, fields ...string) error {
 func (c *Client) XDel(key string, ids ...string) error {
 	return c.cmdable().XDel(c.ctx, key, ids...).Err()
 }
+
+// ZAddBatch adds multiple members to a sorted set in one call
+func (c *Client) ZAddBatch(key string, members ...redis.Z) error {
+	return c.cmdable().ZAdd(c.ctx, key, members...).Err()
+}
+
+// HSetMap sets multiple hash fields in one call
+func (c *Client) HSetMap(key string, fields map[string]string) error {
+	if len(fields) == 0 {
+		return nil
+	}
+	args := make([]interface{}, 0, len(fields)*2)
+	for k, v := range fields {
+		args = append(args, k, v)
+	}
+	return c.cmdable().HSet(c.ctx, key, args...).Err()
+}
