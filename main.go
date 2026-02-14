@@ -56,7 +56,7 @@ func main() {
 }
 
 func parseCLIFlags() *types.Connection {
-	conn, showVersion, err := parseFlags(os.Args[1:])
+	conn, showVersion, doUpdate, err := parseFlags(os.Args[1:])
 	if err != nil {
 		if err == flag.ErrHelp {
 			os.Exit(0)
@@ -67,13 +67,20 @@ func parseCLIFlags() *types.Connection {
 		fmt.Printf("redis-tui version %s\n", version)
 		os.Exit(0)
 	}
+	if doUpdate {
+		if err := runUpdate(version); err != nil {
+			fmt.Fprintf(os.Stderr, "Update failed: %v\n", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 	return conn
 }
 
 // parseFlags parses the given args into a Connection. Returns nil when no
 // --host is provided (interactive mode). showVersion is true when --version
 // was requested. Returns an error if flag parsing fails.
-func parseFlags(args []string) (conn *types.Connection, showVersion bool, err error) {
+func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpdate bool, err error) {
 	fs := flag.NewFlagSet("redis-tui", flag.ContinueOnError)
 
 	host := fs.String("host", "", "Redis server hostname (required for quick-connect mode)")
@@ -88,6 +95,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, err er
 	tlsCA := fs.String("tls-ca", "", "TLS CA certificate file")
 	tlsSkipVerify := fs.Bool("tls-skip-verify", false, "Skip TLS certificate verification")
 	version := fs.Bool("version", false, "Print version and exit")
+	update := fs.Bool("update", false, "Update to the latest version")
 
 	// Short aliases
 	fs.StringVar(host, "h", "", "Redis server hostname (shorthand)")
@@ -111,19 +119,24 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, err er
 		fmt.Fprintf(os.Stderr, "      --tls-ca string     TLS CA certificate file\n")
 		fmt.Fprintf(os.Stderr, "      --tls-skip-verify   Skip TLS certificate verification\n")
 		fmt.Fprintf(os.Stderr, "      --version           Print version and exit\n")
+		fmt.Fprintf(os.Stderr, "      --update            Update to the latest version\n")
 	}
 
 	if err := fs.Parse(args); err != nil {
-		return nil, false, err
+		return nil, false, false, err
 	}
 
 	if *version {
-		return nil, true, nil
+		return nil, true, false, nil
+	}
+
+	if *update {
+		return nil, false, true, nil
 	}
 
 	// If no host flag provided, return nil (normal interactive mode)
 	if *host == "" {
-		return nil, false, nil
+		return nil, false, false, nil
 	}
 
 	conn = &types.Connection{
@@ -150,7 +163,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, err er
 		}
 	}
 
-	return conn, false, nil
+	return conn, false, false, nil
 }
 
 func initConfig() (*db.Config, error) {

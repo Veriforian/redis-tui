@@ -103,6 +103,11 @@ release:
     curl -fsSL https://raw.githubusercontent.com/davidbudnick/redis-tui/main/install.sh | bash
     ```
 
+    ### Update Existing Installation
+    ```bash
+    redis-tui --update
+    ```
+
     ### Homebrew (macOS/Linux)
     ```bash
     brew tap davidbudnick/homebrew-tap

@@ -126,6 +126,9 @@ redis-tui --host redis.example.com --port 6380 --cluster
 
 # Connect with TLS
 redis-tui --host redis.example.com --tls --tls-ca /path/to/ca.pem
+
+# Update to the latest version
+redis-tui --update
 ```
 
 When `--host` is provided the TUI connects automatically on startup. Without flags the interactive connection manager is shown.
@@ -148,6 +151,7 @@ Press `?` inside the app to view the full help screen.
 | `--tls-ca` | | TLS CA certificate file | |
 | `--tls-skip-verify` | | Skip TLS certificate verification | false |
 | `--version` | | Print version and exit | |
+| `--update` | | Update to the latest version | |
 
 Short flags (`-h`, `-p`, `-a`, `-n`) follow [redis-cli](https://redis.io/docs/latest/develop/connect/cli/) conventions.
 

@@ -6,7 +6,7 @@ import (
 )
 
 func TestParseFlags_NoArgs(t *testing.T) {
-	conn, version, err := parseFlags([]string{})
+	conn, version, _, err := parseFlags([]string{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -19,7 +19,7 @@ func TestParseFlags_NoArgs(t *testing.T) {
 }
 
 func TestParseFlags_HostOnly(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "localhost"})
+	conn, _, _, err := parseFlags([]string{"--host", "localhost"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestParseFlags_HostOnly(t *testing.T) {
 }
 
 func TestParseFlags_ShortFlags(t *testing.T) {
-	conn, _, err := parseFlags([]string{"-h", "redis.example.com", "-p", "6380", "-a", "secret", "-n", "5"})
+	conn, _, _, err := parseFlags([]string{"-h", "redis.example.com", "-p", "6380", "-a", "secret", "-n", "5"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestParseFlags_ShortFlags(t *testing.T) {
 }
 
 func TestParseFlags_LongFlags(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "10.0.0.1", "--port", "7000", "--password", "pass", "--db", "3"})
+	conn, _, _, err := parseFlags([]string{"--host", "10.0.0.1", "--port", "7000", "--password", "pass", "--db", "3"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestParseFlags_LongFlags(t *testing.T) {
 }
 
 func TestParseFlags_CustomName(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "localhost", "--name", "Production"})
+	conn, _, _, err := parseFlags([]string{"--host", "localhost", "--name", "Production"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestParseFlags_CustomName(t *testing.T) {
 }
 
 func TestParseFlags_DefaultName(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "myhost", "--port", "9999"})
+	conn, _, _, err := parseFlags([]string{"--host", "myhost", "--port", "9999"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -111,7 +111,7 @@ func TestParseFlags_DefaultName(t *testing.T) {
 }
 
 func TestParseFlags_Cluster(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "localhost", "--cluster"})
+	conn, _, _, err := parseFlags([]string{"--host", "localhost", "--cluster"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestParseFlags_Cluster(t *testing.T) {
 }
 
 func TestParseFlags_TLS(t *testing.T) {
-	conn, _, err := parseFlags([]string{
+	conn, _, _, err := parseFlags([]string{
 		"--host", "localhost",
 		"--tls",
 		"--tls-cert", "/path/cert.pem",
@@ -159,7 +159,7 @@ func TestParseFlags_TLS(t *testing.T) {
 }
 
 func TestParseFlags_TLSNotSet(t *testing.T) {
-	conn, _, err := parseFlags([]string{"--host", "localhost"})
+	conn, _, _, err := parseFlags([]string{"--host", "localhost"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -175,7 +175,7 @@ func TestParseFlags_TLSNotSet(t *testing.T) {
 }
 
 func TestParseFlags_Version(t *testing.T) {
-	conn, version, err := parseFlags([]string{"--version"})
+	conn, version, _, err := parseFlags([]string{"--version"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -188,7 +188,7 @@ func TestParseFlags_Version(t *testing.T) {
 }
 
 func TestParseFlags_AllOptions(t *testing.T) {
-	conn, _, err := parseFlags([]string{
+	conn, _, _, err := parseFlags([]string{
 		"--host", "redis.prod.com",
 		"--port", "6380",
 		"--password", "s3cret",
@@ -234,15 +234,47 @@ func TestParseFlags_AllOptions(t *testing.T) {
 }
 
 func TestParseFlags_InvalidFlag(t *testing.T) {
-	_, _, err := parseFlags([]string{"--invalid-flag"})
+	_, _, _, err := parseFlags([]string{"--invalid-flag"})
 	if err == nil {
 		t.Error("expected error for invalid flag")
 	}
 }
 
 func TestParseFlags_Help(t *testing.T) {
-	_, _, err := parseFlags([]string{"--help"})
+	_, _, _, err := parseFlags([]string{"--help"})
 	if err != flag.ErrHelp {
 		t.Errorf("expected flag.ErrHelp, got %v", err)
+	}
+}
+
+func TestParseFlags_Update(t *testing.T) {
+	conn, version, doUpdate, err := parseFlags([]string{"--update"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if conn != nil {
+		t.Error("expected nil connection for --update")
+	}
+	if version {
+		t.Error("expected version=false")
+	}
+	if !doUpdate {
+		t.Error("expected doUpdate=true")
+	}
+}
+
+func TestParseFlags_UpdateWithOtherFlags(t *testing.T) {
+	conn, version, doUpdate, err := parseFlags([]string{"--host", "localhost", "--update"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if conn != nil {
+		t.Error("expected nil connection when --update is set")
+	}
+	if version {
+		t.Error("expected version=false")
+	}
+	if !doUpdate {
+		t.Error("expected doUpdate=true")
 	}
 }
