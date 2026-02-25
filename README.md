@@ -41,7 +41,7 @@ go install github.com/davidbudnick/redis-tui@latest
 - **Favorites and recent keys** for quick access
 - **Key templates** for creating keys from predefined structures
 - **Value history** — view and restore previous values
-- **JSON syntax highlighting** and JSON path queries
+- **JSON syntax highlighting**
 
 ### Connections and Security
 - **CLI quick connect** — pass `--host`, `--port`, `--password`, etc. to connect without a config file
