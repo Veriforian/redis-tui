@@ -93,11 +93,12 @@ tar -xzf "${TMPDIR}/${ARCHIVE}" -C "$TMPDIR"
 # install binary
 if [ -w "$INSTALL_DIR" ]; then
   mv "${TMPDIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
+  chmod +x "${INSTALL_DIR}/${BINARY}"
 else
   info "Elevated permissions required to install to ${INSTALL_DIR}"
   sudo mv "${TMPDIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
+  sudo chmod +x "${INSTALL_DIR}/${BINARY}"
 fi
-chmod +x "${INSTALL_DIR}/${BINARY}"
 
 info "redis-tui ${VERSION} installed to ${INSTALL_DIR}/${BINARY}"
 info "Run 'redis-tui' to get started!"
