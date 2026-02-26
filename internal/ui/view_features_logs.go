@@ -11,15 +11,15 @@ import (
 func (m Model) viewLogs() string {
 	var b strings.Builder
 
-	logCount := 0
+	var logs []string
 	if m.Logs != nil {
-		logCount = len(*m.Logs)
+		logs = m.Logs.GetLogs()
 	}
 
-	b.WriteString(titleStyle.Render(fmt.Sprintf("Application Logs (%d entries)", logCount)))
+	b.WriteString(titleStyle.Render(fmt.Sprintf("Application Logs (%d entries)", len(logs))))
 	b.WriteString("\n\n")
 
-	if m.Logs == nil || len(*m.Logs) == 0 {
+	if m.Logs == nil || len(logs) == 0 {
 		b.WriteString(dimStyle.Render("No logs yet. Logs will appear as you use the app."))
 		b.WriteString("\n\n")
 		b.WriteString(helpStyle.Render("esc:close"))
@@ -27,8 +27,8 @@ func (m Model) viewLogs() string {
 	}
 
 	// If showing detail view for a log entry
-	if m.ShowingLogDetail && m.LogCursor < len(*m.Logs) {
-		return m.viewLogDetail((*m.Logs)[m.LogCursor])
+	if m.ShowingLogDetail && m.LogCursor < len(logs) {
+		return m.viewLogDetail(logs[m.LogCursor])
 	}
 
 	// Calculate visible window
@@ -41,8 +41,8 @@ func (m Model) viewLogs() string {
 		startIdx = m.LogCursor - maxVisible + 1
 	}
 	endIdx := startIdx + maxVisible
-	if endIdx > len(*m.Logs) {
-		endIdx = len(*m.Logs)
+	if endIdx > len(logs) {
+		endIdx = len(logs)
 	}
 
 	// Header
@@ -52,7 +52,7 @@ func (m Model) viewLogs() string {
 	b.WriteString("\n")
 
 	for i := startIdx; i < endIdx; i++ {
-		logLine := (*m.Logs)[i]
+		logLine := logs[i]
 		entry := parseLogEntry(logLine)
 
 		// Format level with color
@@ -87,9 +87,9 @@ func (m Model) viewLogs() string {
 		b.WriteString("\n")
 	}
 
-	if len(*m.Logs) > maxVisible {
+	if len(logs) > maxVisible {
 		b.WriteString("\n")
-		b.WriteString(dimStyle.Render(fmt.Sprintf("Showing %d-%d of %d", startIdx+1, endIdx, len(*m.Logs))))
+		b.WriteString(dimStyle.Render(fmt.Sprintf("Showing %d-%d of %d", startIdx+1, endIdx, len(logs))))
 	}
 
 	b.WriteString("\n\n")

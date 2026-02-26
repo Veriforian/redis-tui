@@ -163,7 +163,7 @@ func (m Model) handleLogsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	logCount := 0
 	if m.Logs != nil {
-		logCount = len(*m.Logs)
+		logCount = m.Logs.Len()
 	}
 
 	switch msg.String() {

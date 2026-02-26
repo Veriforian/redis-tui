@@ -26,11 +26,11 @@ func main() {
 	opts := parseCLIFlags()
 
 	// Minimal setup before starting UI
-	var logs []string
+	logWriter := types.NewLogWriter()
 
 	// Start the UI immediately for perceived speed
 	m := ui.NewModel()
-	m.Logs = &logs
+	m.Logs = logWriter
 
 	// If CLI connection flags were provided, set up auto-connect
 	if opts != nil {
@@ -40,8 +40,7 @@ func main() {
 	sendFunc := func(msg tea.Msg) {}
 	m.SendFunc = &sendFunc
 
-	// Initialize logger in background (non-blocking)
-	logWriter := types.LogWriter{Logs: &logs}
+	// Initialize logger
 	handler := slog.NewJSONHandler(logWriter, nil)
 	slog.SetDefault(slog.New(handler))
 
