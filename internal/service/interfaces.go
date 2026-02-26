@@ -119,6 +119,7 @@ type RedisService interface {
 	MemoryUsage(key string) (int64, error)
 	SlowLogGet(count int64) ([]types.SlowLogEntry, error)
 	ClientList() ([]types.ClientInfo, error)
+	GetLiveMetrics() (types.LiveMetricsData, error)
 
 	// Config operations
 	ConfigGet(pattern string) (map[string]string, error)
@@ -143,4 +144,7 @@ type RedisService interface {
 	// Import/Export
 	ExportKeys(pattern string) (map[string]interface{}, error)
 	ImportKeys(data map[string]interface{}) (int, error)
+
+	// Configuration
+	SetIncludeTypes(v bool)
 }

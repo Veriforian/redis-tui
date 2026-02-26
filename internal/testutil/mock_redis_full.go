@@ -38,6 +38,8 @@ type FullMockRedisClient struct {
 	CompareValue2         types.RedisValue
 	KeyPrefixesResult     []string
 	XAddResult            string
+	LiveMetricsResult     types.LiveMetricsData
+	LiveMetricsError      error
 
 	// Configurable errors (one per method)
 	ConnectClusterError    error
@@ -368,4 +370,17 @@ func (m *FullMockRedisClient) ExportKeys(_ string) (map[string]interface{}, erro
 func (m *FullMockRedisClient) ImportKeys(_ map[string]interface{}) (int, error) {
 	m.Calls = append(m.Calls, "ImportKeys")
 	return m.ImportResult, m.ImportError
+}
+
+// Live metrics
+
+func (m *FullMockRedisClient) GetLiveMetrics() (types.LiveMetricsData, error) {
+	m.Calls = append(m.Calls, "GetLiveMetrics")
+	return m.LiveMetricsResult, m.LiveMetricsError
+}
+
+// Configuration
+
+func (m *FullMockRedisClient) SetIncludeTypes(_ bool) {
+	m.Calls = append(m.Calls, "SetIncludeTypes")
 }
