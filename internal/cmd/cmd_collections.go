@@ -10,50 +10,55 @@ import (
 
 func AddToListCmd(key string, values ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.RPush(key, values...)
+		err := rc.RPush(key, values...)
 		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func AddToSetCmd(key string, members ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.SAdd(key, members...)
+		err := rc.SAdd(key, members...)
 		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func AddToZSetCmd(key string, score float64, member string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.ZAdd(key, score, member)
+		err := rc.ZAdd(key, score, member)
 		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func AddToHashCmd(key, field, value string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.HSet(key, field, value)
+		err := rc.HSet(key, field, value)
 		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func AddToStreamCmd(key string, fields map[string]interface{}) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
 		}
-		_, err := RedisClient.XAdd(key, fields)
+		_, err := rc.XAdd(key, fields)
 		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
 	}
 }
@@ -62,50 +67,55 @@ func AddToStreamCmd(key string, fields map[string]interface{}) tea.Cmd {
 
 func RemoveFromListCmd(key string, value string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemRemovedFromCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.LRem(key, 1, value)
+		err := rc.LRem(key, 1, value)
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func RemoveFromSetCmd(key string, members ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemRemovedFromCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.SRem(key, members...)
+		err := rc.SRem(key, members...)
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func RemoveFromZSetCmd(key string, members ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemRemovedFromCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.ZRem(key, members...)
+		err := rc.ZRem(key, members...)
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func RemoveFromHashCmd(key string, fields ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemRemovedFromCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.HDel(key, fields...)
+		err := rc.HDel(key, fields...)
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }
 
 func RemoveFromStreamCmd(key string, ids ...string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ItemRemovedFromCollectionMsg{Key: key, Err: nil}
 		}
-		err := RedisClient.XDel(key, ids...)
+		err := rc.XDel(key, ids...)
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }

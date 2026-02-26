@@ -98,7 +98,7 @@ func (m Model) handleKeySetMsg(msg types.KeySetMsg) (tea.Model, tea.Cmd) {
 	m.StatusMsg = "Key saved"
 	m.Screen = types.ScreenKeys
 	m.resetAddKeyInputs()
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }
 
 func (m Model) handleKeyRenamedMsg(msg types.KeyRenamedMsg) (tea.Model, tea.Cmd) {
@@ -130,7 +130,7 @@ func (m Model) handleKeyCopiedMsg(msg types.KeyCopiedMsg) (tea.Model, tea.Cmd) {
 	m.StatusMsg = "Key copied to " + msg.DestKey
 	m.Screen = types.ScreenKeyDetail
 	m.KeyCursor = 0
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }
 
 // Value message handlers
@@ -208,5 +208,5 @@ func (m Model) handleBatchTTLSetMsg(msg types.BatchTTLSetMsg) (tea.Model, tea.Cm
 	m.StatusMsg = "Set TTL on " + strconv.Itoa(msg.Count) + " keys"
 	m.Screen = types.ScreenKeys
 	m.KeyCursor = 0
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }

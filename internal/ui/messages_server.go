@@ -34,7 +34,7 @@ func (m Model) handleDBSwitchedMsg(msg types.DBSwitchedMsg) (tea.Model, tea.Cmd)
 	m.Screen = types.ScreenKeys
 	m.KeyCursor = 0
 	m.Keys = []types.RedisKey{}
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }
 
 func (m Model) handleFlushDBMsg(msg types.FlushDBMsg) (tea.Model, tea.Cmd) {
@@ -186,7 +186,7 @@ func (m Model) handleKeyspaceEventMsg(msg types.KeyspaceEventMsg) (tea.Model, te
 	// Refresh keys if a key was set or deleted
 	if msg.Event.Event == "set" || msg.Event.Event == "del" {
 		m.StatusMsg = fmt.Sprintf("Key %s: %s", msg.Event.Event, msg.Event.Key)
-		return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+		return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 	}
 	return m, nil
 }

@@ -49,7 +49,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize config: %v", err)
 	}
-	cmd.Config = config
+	cmd.SetConfig(config)
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	*m.SendFunc = p.Send
@@ -77,9 +77,9 @@ func parseCLIFlags() *types.Connection {
 		}
 		os.Exit(0)
 	}
-	cmd.ScanSize = scanSize
-	cmd.IncludeTypes = includeTypes
-	cmd.Version = version
+	cmd.SetScanSize(scanSize)
+	cmd.SetIncludeTypes(includeTypes)
+	cmd.SetVersion(version)
 	return conn
 }
 

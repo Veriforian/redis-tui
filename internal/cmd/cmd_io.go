@@ -14,10 +14,11 @@ import (
 
 func ExportKeysCmd(pattern, filename string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ExportCompleteMsg{Filename: filename, Err: nil}
 		}
-		data, err := RedisClient.ExportKeys(pattern)
+		data, err := rc.ExportKeys(pattern)
 		if err != nil {
 			return types.ExportCompleteMsg{Filename: filename, Err: err}
 		}
@@ -34,7 +35,8 @@ func ExportKeysCmd(pattern, filename string) tea.Cmd {
 
 func ImportKeysCmd(filename string) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ImportCompleteMsg{Filename: filename, Err: nil}
 		}
 
@@ -50,7 +52,7 @@ func ImportKeysCmd(filename string) tea.Cmd {
 			return types.ImportCompleteMsg{Filename: filename, Err: err}
 		}
 
-		count, err := RedisClient.ImportKeys(data)
+		count, err := rc.ImportKeys(data)
 		return types.ImportCompleteMsg{Filename: filename, KeyCount: count, Err: err}
 	}
 }

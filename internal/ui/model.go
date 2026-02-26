@@ -319,7 +319,7 @@ func createPubSubInputs() []textinput.Model {
 func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		cmd.LoadConnectionsCmd(),
-		cmd.CheckVersionCmd(cmd.Version),
+		cmd.CheckVersionCmd(cmd.GetVersion()),
 		func() tea.Msg { return tea.EnableBracketedPaste() },
 	}
 	if m.CLIConnection != nil {

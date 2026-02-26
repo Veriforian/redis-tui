@@ -31,7 +31,7 @@ func (m Model) handleImportCompleteMsg(msg types.ImportCompleteMsg) (tea.Model, 
 	m.StatusMsg = "Imported " + strconv.Itoa(msg.KeyCount) + " keys from " + msg.Filename
 	m.Screen = types.ScreenKeys
 	m.KeyCursor = 0
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }
 
 // Feature message handlers
@@ -45,7 +45,7 @@ func (m Model) handleBulkDeleteMsg(msg types.BulkDeleteMsg) (tea.Model, tea.Cmd)
 	m.StatusMsg = "Deleted " + strconv.Itoa(msg.Deleted) + " keys"
 	m.Screen = types.ScreenKeys
 	m.KeyCursor = 0
-	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.ScanSize)
+	return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 }
 
 func (m Model) handleFavoritesLoadedMsg(msg types.FavoritesLoadedMsg) (tea.Model, tea.Cmd) {

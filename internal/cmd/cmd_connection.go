@@ -12,10 +12,11 @@ import (
 
 func LoadConnectionsCmd() tea.Cmd {
 	return func() tea.Msg {
-		if Config == nil {
+		cfg := GetConfig()
+		if cfg == nil {
 			return types.ConnectionsLoadedMsg{Err: nil}
 		}
-		connections, err := Config.ListConnections()
+		connections, err := cfg.ListConnections()
 		if err != nil {
 			slog.Error("Failed to load connections", "error", err)
 		}
@@ -25,10 +26,11 @@ func LoadConnectionsCmd() tea.Cmd {
 
 func AddConnectionCmd(name, host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
-		if Config == nil {
+		cfg := GetConfig()
+		if cfg == nil {
 			return types.ConnectionAddedMsg{Err: nil}
 		}
-		conn, err := Config.AddConnection(name, host, port, password, dbNum, useCluster)
+		conn, err := cfg.AddConnection(name, host, port, password, dbNum, useCluster)
 		if err != nil {
 			slog.Error("Failed to add connection", "error", err)
 		}
@@ -38,10 +40,11 @@ func AddConnectionCmd(name, host string, port int, password string, dbNum int, u
 
 func UpdateConnectionCmd(id int64, name, host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
-		if Config == nil {
+		cfg := GetConfig()
+		if cfg == nil {
 			return types.ConnectionUpdatedMsg{Err: nil}
 		}
-		conn, err := Config.UpdateConnection(id, name, host, port, password, dbNum, useCluster)
+		conn, err := cfg.UpdateConnection(id, name, host, port, password, dbNum, useCluster)
 		if err != nil {
 			slog.Error("Failed to update connection", "error", err)
 		}
@@ -51,25 +54,28 @@ func UpdateConnectionCmd(id int64, name, host string, port int, password string,
 
 func DeleteConnectionCmd(id int64) tea.Cmd {
 	return func() tea.Msg {
-		if Config == nil {
+		cfg := GetConfig()
+		if cfg == nil {
 			return types.ConnectionDeletedMsg{Err: nil}
 		}
-		err := Config.DeleteConnection(id)
+		err := cfg.DeleteConnection(id)
 		return types.ConnectionDeletedMsg{ID: id, Err: err}
 	}
 }
 
 func ConnectCmd(host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
-			RedisClient = redis.NewClient()
+		rc := getRedisClient()
+		if rc == nil {
+			setRedisClient(redis.NewClient())
+			rc = getRedisClient()
 		}
-		RedisClient.SetIncludeTypes(IncludeTypes)
+		rc.SetIncludeTypes(getIncludeTypes())
 		var err error
 		if useCluster {
-			err = RedisClient.ConnectCluster([]string{fmt.Sprintf("%s:%d", host, port)}, password)
+			err = rc.ConnectCluster([]string{fmt.Sprintf("%s:%d", host, port)}, password)
 		} else {
-			err = RedisClient.Connect(host, port, password, dbNum)
+			err = rc.Connect(host, port, password, dbNum)
 		}
 		if err != nil {
 			slog.Error("Failed to connect", "error", err)
@@ -80,8 +86,9 @@ func ConnectCmd(host string, port int, password string, dbNum int, useCluster bo
 
 func DisconnectCmd() tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient != nil {
-			_ = RedisClient.Disconnect()
+		rc := getRedisClient()
+		if rc != nil {
+			_ = rc.Disconnect()
 		}
 		return types.DisconnectedMsg{}
 	}
@@ -89,13 +96,15 @@ func DisconnectCmd() tea.Cmd {
 
 func AutoConnectCmd(conn types.Connection) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
-			RedisClient = redis.NewClient()
+		rc := getRedisClient()
+		if rc == nil {
+			setRedisClient(redis.NewClient())
+			rc = getRedisClient()
 		}
-		RedisClient.SetIncludeTypes(IncludeTypes)
+		rc.SetIncludeTypes(getIncludeTypes())
 		var err error
 		if conn.UseCluster {
-			err = RedisClient.ConnectCluster([]string{fmt.Sprintf("%s:%d", conn.Host, conn.Port)}, conn.Password)
+			err = rc.ConnectCluster([]string{fmt.Sprintf("%s:%d", conn.Host, conn.Port)}, conn.Password)
 		} else if conn.UseTLS {
 			if conn.TLSConfig == nil {
 				return types.ConnectedMsg{Err: fmt.Errorf("TLS requested but TLS configuration is missing")}
@@ -105,9 +114,9 @@ func AutoConnectCmd(conn types.Connection) tea.Cmd {
 				slog.Error("Failed to build TLS config", "error", tlsErr)
 				return types.ConnectedMsg{Err: tlsErr}
 			}
-			err = RedisClient.ConnectWithTLS(conn.Host, conn.Port, conn.Password, conn.DB, tlsCfg)
+			err = rc.ConnectWithTLS(conn.Host, conn.Port, conn.Password, conn.DB, tlsCfg)
 		} else {
-			err = RedisClient.Connect(conn.Host, conn.Port, conn.Password, conn.DB)
+			err = rc.Connect(conn.Host, conn.Port, conn.Password, conn.DB)
 		}
 		if err != nil {
 			slog.Error("Failed to connect", "error", err)
@@ -118,10 +127,11 @@ func AutoConnectCmd(conn types.Connection) tea.Cmd {
 
 func TestConnectionCmd(host string, port int, password string, db int) tea.Cmd {
 	return func() tea.Msg {
-		if RedisClient == nil {
+		rc := getRedisClient()
+		if rc == nil {
 			return types.ConnectionTestMsg{Success: false, Err: nil}
 		}
-		latency, err := RedisClient.TestConnection(host, port, password, db)
+		latency, err := rc.TestConnection(host, port, password, db)
 		return types.ConnectionTestMsg{Success: err == nil, Latency: latency, Err: err}
 	}
 }
