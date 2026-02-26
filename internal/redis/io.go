@@ -71,6 +71,8 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 				cmd = pipe.HGetAll(c.ctx, m.key)
 			case "stream":
 				cmd = pipe.XRange(c.ctx, m.key, "-", "+")
+			case "ReJSON-RL":
+				cmd = pipe.Do(c.ctx, "JSON.GET", m.key, "$")
 			default:
 				continue
 			}
@@ -127,6 +129,17 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 						entries[k] = map[string]interface{}{"id": e.ID, "fields": e.Values}
 					}
 					keyData["value"] = entries
+				} else {
+					continue
+				}
+			case "ReJSON-RL":
+				if cmd, ok := f.cmd.(*redis.Cmd); ok && cmd.Err() == nil {
+					val, err := cmd.Text()
+					if err == nil {
+						keyData["value"] = val
+					} else {
+						continue
+					}
 				} else {
 					continue
 				}
@@ -225,6 +238,14 @@ func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
 				}
 				count++
 			}
+		case "ReJSON-RL":
+			if val, ok := keyData["value"].(string); ok {
+				_ = c.JSONSet(key, val)
+				if ttl > 0 {
+					_ = c.SetTTL(key, ttl)
+				}
+				count++
+			}
 		}
 	}
 
@@ -265,6 +286,7 @@ type valueFetchCmds struct {
 	zsetCmd   *redis.ZSliceCmd
 	hashCmd   *redis.MapStringStringCmd
 	streamCmd *redis.XMessageSliceCmd
+	jsonCmd   *redis.Cmd
 }
 
 func queueValueFetch(pipe redis.Pipeliner, ctx context.Context, key, keyType string) valueFetchCmds {
@@ -282,6 +304,8 @@ func queueValueFetch(pipe redis.Pipeliner, ctx context.Context, key, keyType str
 		r.hashCmd = pipe.HGetAll(ctx, key)
 	case "stream":
 		r.streamCmd = pipe.XRange(ctx, key, "-", "+")
+	case "ReJSON-RL":
+		r.jsonCmd = pipe.Do(ctx, "JSON.GET", key, "$")
 	}
 	return r
 }
@@ -326,6 +350,10 @@ func extractValue(keyType string, r valueFetchCmds) types.RedisValue {
 					Fields: entry.Values,
 				})
 			}
+		}
+	case "ReJSON-RL":
+		if r.jsonCmd != nil {
+			value.JSONValue, _ = r.jsonCmd.Text()
 		}
 	}
 

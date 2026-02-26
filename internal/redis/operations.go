@@ -69,9 +69,26 @@ func (c *Client) GetValue(key string) (types.RedisValue, error) {
 				Fields: entry.Values,
 			})
 		}
+
+	case "ReJSON-RL":
+		val, err := c.do("JSON.GET", key, "$").Text()
+		if err != nil {
+			return value, err
+		}
+		value.JSONValue = val
 	}
 
 	return value, nil
+}
+
+// JSONGet retrieves a JSON value from a RedisJSON key
+func (c *Client) JSONGet(key string) (string, error) {
+	return c.do("JSON.GET", key, "$").Text()
+}
+
+// JSONSet sets a JSON value on a RedisJSON key
+func (c *Client) JSONSet(key, value string) error {
+	return c.do("JSON.SET", key, "$", value).Err()
 }
 
 // DeleteKey deletes a single key

@@ -40,6 +40,9 @@ type FullMockRedisClient struct {
 	XAddResult            string
 	LiveMetricsResult     types.LiveMetricsData
 	LiveMetricsError      error
+	JSONGetResult         string
+	JSONGetError          error
+	JSONSetError          error
 
 	// Configurable errors (one per method)
 	ConnectClusterError    error
@@ -377,6 +380,18 @@ func (m *FullMockRedisClient) ImportKeys(_ map[string]interface{}) (int, error) 
 func (m *FullMockRedisClient) GetLiveMetrics() (types.LiveMetricsData, error) {
 	m.Calls = append(m.Calls, "GetLiveMetrics")
 	return m.LiveMetricsResult, m.LiveMetricsError
+}
+
+// JSON operations
+
+func (m *FullMockRedisClient) JSONGet(_ string) (string, error) {
+	m.Calls = append(m.Calls, "JSONGet")
+	return m.JSONGetResult, m.JSONGetError
+}
+
+func (m *FullMockRedisClient) JSONSet(_, _ string) error {
+	m.Calls = append(m.Calls, "JSONSet")
+	return m.JSONSetError
 }
 
 // Configuration

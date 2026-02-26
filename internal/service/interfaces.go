@@ -84,6 +84,10 @@ type RedisService interface {
 	// String operations
 	SetString(key, value string, ttl time.Duration) error
 
+	// JSON operations
+	JSONGet(key string) (string, error)
+	JSONSet(key, value string) error
+
 	// TTL operations
 	SetTTL(key string, ttl time.Duration) error
 	BatchSetTTL(pattern string, ttl time.Duration) (int, error)

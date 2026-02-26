@@ -1,0 +1,149 @@
+services:
+  redis-node-1:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6386:6386"
+      - "16386:16386"
+    command: >
+      redis-stack-server
+        --port 6386
+        --cluster-enabled yes
+        --cluster-config-file nodes-1.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6386
+        --cluster-announce-bus-port 16386
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6386", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis-node-2:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6387:6387"
+      - "16387:16387"
+    command: >
+      redis-stack-server
+        --port 6387
+        --cluster-enabled yes
+        --cluster-config-file nodes-2.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6387
+        --cluster-announce-bus-port 16387
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6387", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis-node-3:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6388:6388"
+      - "16388:16388"
+    command: >
+      redis-stack-server
+        --port 6388
+        --cluster-enabled yes
+        --cluster-config-file nodes-3.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6388
+        --cluster-announce-bus-port 16388
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6388", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis-node-4:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6389:6389"
+      - "16389:16389"
+    command: >
+      redis-stack-server
+        --port 6389
+        --cluster-enabled yes
+        --cluster-config-file nodes-4.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6389
+        --cluster-announce-bus-port 16389
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6389", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis-node-5:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6391:6391"
+      - "16391:16391"
+    command: >
+      redis-stack-server
+        --port 6391
+        --cluster-enabled yes
+        --cluster-config-file nodes-5.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6391
+        --cluster-announce-bus-port 16391
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6391", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  redis-node-6:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6392:6392"
+      - "16392:16392"
+    command: >
+      redis-stack-server
+        --port 6392
+        --cluster-enabled yes
+        --cluster-config-file nodes-6.conf
+        --cluster-node-timeout 5000
+        --cluster-announce-port 6392
+        --cluster-announce-bus-port 16392
+        --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6392", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  cluster-init:
+    image: redis/redis-stack-server:latest
+    depends_on:
+      redis-node-1:
+        condition: service_healthy
+      redis-node-2:
+        condition: service_healthy
+      redis-node-3:
+        condition: service_healthy
+      redis-node-4:
+        condition: service_healthy
+      redis-node-5:
+        condition: service_healthy
+      redis-node-6:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Creating Redis Stack cluster..."
+        redis-cli --cluster create \
+          redis-node-1:6386 \
+          redis-node-2:6387 \
+          redis-node-3:6388 \
+          redis-node-4:6389 \
+          redis-node-5:6391 \
+          redis-node-6:6392 \
+          --cluster-replicas 1 --cluster-yes
+        echo "Cluster created."

@@ -47,6 +47,15 @@ func (c *Client) cmdable() redis.Cmdable {
 	return c.client
 }
 
+func (c *Client) do(args ...interface{}) *redis.Cmd {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if c.isCluster {
+		return c.cluster.Do(c.ctx, args...)
+	}
+	return c.client.Do(c.ctx, args...)
+}
+
 func (c *Client) pipeline() redis.Pipeliner {
 	c.mu.RLock()
 	defer c.mu.RUnlock()

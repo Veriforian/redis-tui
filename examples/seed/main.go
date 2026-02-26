@@ -61,6 +61,11 @@ func main() {
 	seedTTLKeys(ctx, rdb)
 	seedNestedKeys(ctx, rdb)
 	seedJSONStrings(ctx, rdb)
+	if hasJSONModule(ctx, rdb) {
+		seedJSON(ctx, rdb)
+	} else {
+		fmt.Println("  json (native): skipped — RedisJSON module not available")
+	}
 
 	fmt.Println("Done — seeding complete")
 }
@@ -252,6 +257,37 @@ func seedJSONStrings(ctx context.Context, rdb redis.Cmdable) {
 		must(rdb.Set(ctx, k, v, 0))
 	}
 	fmt.Printf("  json strings: %d keys\n", len(jsons))
+}
+
+func hasJSONModule(ctx context.Context, rdb redis.Cmdable) bool {
+	// Probe with a throwaway key to see if JSON.SET is available
+	pipe := rdb.Pipeline()
+	pipe.Do(ctx, "JSON.SET", "__redis_tui_probe__", "$", `"probe"`)
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return false
+	}
+	// Clean up probe key
+	rdb.Del(ctx, "__redis_tui_probe__")
+	return true
+}
+
+func seedJSON(ctx context.Context, rdb redis.Cmdable) {
+	jsons := map[string]string{
+		"rjson:config":          `{"max_retries":3,"timeout_ms":5000,"features":{"dark_mode":true,"beta":false},"allowed_origins":["https://example.com","https://app.example.com"]}`,
+		"rjson:user-settings":   `{"user_id":1001,"theme":"dark","language":"en","notifications":{"email":true,"push":false,"sms":false},"dashboard":{"widgets":["metrics","logs","alerts"],"refresh_interval":30}}`,
+		"rjson:product-catalog": `{"products":[{"id":1,"name":"Widget Pro","price":29.99,"tags":["electronics","gadget"]},{"id":2,"name":"Super Gadget","price":49.99,"tags":["electronics","premium"]},{"id":3,"name":"Basic Tool","price":9.99,"tags":["tools","basic"]}],"updated_at":"2025-01-15T10:30:00Z"}`,
+	}
+	pipe := rdb.Pipeline()
+	for k, v := range jsons {
+		pipe.Do(ctx, "JSON.SET", k, "$", v)
+	}
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		log.Printf("  json (native): failed to seed (%v)", err)
+		return
+	}
+	fmt.Printf("  json (native): %d keys\n", len(jsons))
 }
 
 func must(cmd interface{ Err() error }) {

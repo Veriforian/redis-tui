@@ -180,6 +180,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case types.EditorSaveMsg:
 		if m.CurrentKey != nil {
 			m.Loading = true
+			if m.CurrentKey.Type == types.KeyTypeJSON {
+				return m, cmd.EditJSONValueCmd(m.CurrentKey.Key, msg.Content)
+			}
 			return m, cmd.EditStringValueCmd(m.CurrentKey.Key, msg.Content)
 		}
 	case types.EditorQuitMsg:

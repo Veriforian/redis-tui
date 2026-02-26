@@ -103,8 +103,21 @@ func CreateKeyCmd(key string, keyType types.KeyType, value string, extra string,
 			}
 			fields := map[string]interface{}{field: value}
 			_, err = rc.XAdd(key, fields)
+		case types.KeyTypeJSON:
+			err = rc.JSONSet(key, value)
 		}
 		return types.KeySetMsg{Key: key, Err: err}
+	}
+}
+
+func EditJSONValueCmd(key, value string) tea.Cmd {
+	return func() tea.Msg {
+		rc := getRedisClient()
+		if rc == nil {
+			return types.ValueEditedMsg{Key: key, Err: nil}
+		}
+		err := rc.JSONSet(key, value)
+		return types.ValueEditedMsg{Key: key, Err: err}
 	}
 }
 

@@ -509,6 +509,36 @@ func TestEditStringValue(t *testing.T) {
 	})
 }
 
+func TestEditJSONValue(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		cmds, _ := newMockCmds()
+		msg := cmds.EditJSONValue("jsonkey", `{"key":"value"}`)()
+		result := msg.(types.ValueEditedMsg)
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.JSONSetError = errors.New("json set error")
+		msg := cmds.EditJSONValue("jsonkey", `{"key":"value"}`)()
+		result := msg.(types.ValueEditedMsg)
+		if result.Err == nil {
+			t.Error("expected error")
+		}
+	})
+
+	t.Run("nil redis", func(t *testing.T) {
+		cmds := NewCommands(nil, nil)
+		msg := cmds.EditJSONValue("k", "{}")()
+		result := msg.(types.ValueEditedMsg)
+		if result.Err != nil {
+			t.Errorf("nil redis should not error: %v", result.Err)
+		}
+	})
+}
+
 func TestEditListElement(t *testing.T) {
 	cmds, _ := newMockCmds()
 	msg := cmds.EditListElement("list", 0, "newval")()

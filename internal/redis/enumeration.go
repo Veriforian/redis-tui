@@ -273,6 +273,7 @@ func (c *Client) SearchByValue(pattern string, valueSearch string, maxKeys int) 
 			hashCmd *redis.MapStringStringCmd
 			listCmd *redis.StringSliceCmd
 			setCmd  *redis.StringSliceCmd
+			jsonCmd *redis.Cmd
 		}
 		valueCmds := make([]valueCmd, 0, len(keys))
 
@@ -288,6 +289,8 @@ func (c *Client) SearchByValue(pattern string, valueSearch string, maxKeys int) 
 				vc.listCmd = valuePipe.LRange(c.ctx, key, 0, -1)
 			case "set":
 				vc.setCmd = valuePipe.SMembers(c.ctx, key)
+			case "ReJSON-RL":
+				vc.jsonCmd = valuePipe.Do(c.ctx, "JSON.GET", key, "$")
 			default:
 				continue
 			}
@@ -326,6 +329,9 @@ func (c *Client) SearchByValue(pattern string, valueSearch string, maxKeys int) 
 						break
 					}
 				}
+			case "ReJSON-RL":
+				val, _ := vc.jsonCmd.Text()
+				found = strings.Contains(val, valueSearch)
 			}
 			if found {
 				matches = append(matches, match{key: keys[vc.idx], keyType: keyTypes[vc.idx]})

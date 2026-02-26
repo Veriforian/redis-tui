@@ -6,7 +6,11 @@ COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 DATE := $(shell date -u '+%Y-%m-%dT%H:%M:%SZ')
 LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)"
 
-.PHONY: all build install clean test lint run release snapshot
+.PHONY: all build install clean test lint run release snapshot \
+	docker-up docker-down docker-seed \
+	docker-up-standalone docker-up-standalone-stack docker-up-cluster docker-up-cluster-stack \
+	docker-down-standalone docker-down-standalone-stack docker-down-cluster docker-down-cluster-stack \
+	docker-seed-standalone docker-seed-standalone-stack docker-seed-cluster docker-seed-cluster-stack
 
 all: build
 
@@ -64,19 +68,82 @@ snapshot:
 dev-deps:
 	go install github.com/goreleaser/goreleaser/v2@v2.13.1
 
+## --- Docker Examples ---
+
+## Start all example Redis instances
+docker-up: docker-up-standalone docker-up-standalone-stack docker-up-cluster docker-up-cluster-stack
+
+## Stop all example Redis instances
+docker-down: docker-down-standalone docker-down-standalone-stack docker-down-cluster docker-down-cluster-stack
+
+## Seed all running example instances
+docker-seed: docker-seed-standalone docker-seed-standalone-stack docker-seed-cluster docker-seed-cluster-stack
+
+## Standalone (redis:7-alpine on :6379)
+docker-up-standalone:
+	docker compose -f examples/standalone/docker-compose.yml up -d
+
+docker-down-standalone:
+	docker compose -f examples/standalone/docker-compose.yml down
+
+docker-seed-standalone:
+	go run ./examples/seed -flush
+
+## Standalone Redis Stack (redis-stack on :6390)
+docker-up-standalone-stack:
+	docker compose -f examples/standalone-redis-stack/docker-compose.yml up -d
+
+docker-down-standalone-stack:
+	docker compose -f examples/standalone-redis-stack/docker-compose.yml down
+
+docker-seed-standalone-stack:
+	go run ./examples/seed -addr localhost:6390 -flush
+
+## Cluster (redis:7-alpine on :6380-6385)
+docker-up-cluster:
+	docker compose -f examples/cluster/docker-compose.yml up -d
+
+docker-down-cluster:
+	docker compose -f examples/cluster/docker-compose.yml down
+
+docker-seed-cluster:
+	go run ./examples/seed -addr localhost:6380 -cluster -flush
+
+## Cluster Redis Stack (redis-stack on :6386-6392)
+docker-up-cluster-stack:
+	docker compose -f examples/cluster-redis-stack/docker-compose.yml up -d
+
+docker-down-cluster-stack:
+	docker compose -f examples/cluster-redis-stack/docker-compose.yml down
+
+docker-seed-cluster-stack:
+	go run ./examples/seed -addr localhost:6386 -cluster -flush
+
 ## Show help
 help:
 	@echo "Available targets:"
-	@echo "  build       - Build the application"
-	@echo "  install     - Install to GOPATH/bin"
-	@echo "  clean       - Clean build artifacts"
-	@echo "  test        - Run tests"
-	@echo "  test-cover  - Run tests with coverage"
-	@echo "  lint        - Run linter"
-	@echo "  fmt         - Format code"
-	@echo "  run         - Run the application"
-	@echo "  build-all   - Build for multiple platforms"
-	@echo "  release     - Create a release with goreleaser"
-	@echo "  snapshot    - Create a snapshot release"
-	@echo "  dev-deps    - Install development dependencies"
-	@echo "  help        - Show this help"
+	@echo ""
+	@echo "  Build & Dev:"
+	@echo "    build       - Build the application"
+	@echo "    install     - Install to GOPATH/bin"
+	@echo "    clean       - Clean build artifacts"
+	@echo "    test        - Run tests"
+	@echo "    test-cover  - Run tests with coverage"
+	@echo "    lint        - Run linter"
+	@echo "    fmt         - Format code"
+	@echo "    run         - Run the application"
+	@echo "    build-all   - Build for multiple platforms"
+	@echo "    release     - Create a release with goreleaser"
+	@echo "    snapshot    - Create a snapshot release"
+	@echo "    dev-deps    - Install development dependencies"
+	@echo ""
+	@echo "  Docker Examples:"
+	@echo "    docker-up                  - Start all instances"
+	@echo "    docker-down                - Stop all instances"
+	@echo "    docker-seed                - Seed all instances"
+	@echo "    docker-up-standalone       - Standalone (:6379)"
+	@echo "    docker-up-standalone-stack - Standalone Redis Stack (:6390)"
+	@echo "    docker-up-cluster          - Cluster (:6380-6385)"
+	@echo "    docker-up-cluster-stack    - Cluster Redis Stack (:6386-6392)"
+	@echo ""
+	@echo "    help        - Show this help"

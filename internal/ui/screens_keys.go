@@ -338,26 +338,32 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmd.LoadKeyValueCmd(m.CurrentKey.Key), cmd.GetMemoryUsageCmd(m.CurrentKey.Key))
 		}
 	case "e":
-		if m.CurrentKey != nil && m.CurrentKey.Type == types.KeyTypeString {
+		if m.CurrentKey != nil && (m.CurrentKey.Type == types.KeyTypeString || m.CurrentKey.Type == types.KeyTypeJSON) {
 			content := m.CurrentValue.StringValue
 			fileName := ""
+			if m.CurrentKey.Type == types.KeyTypeJSON {
+				content = m.CurrentValue.JSONValue
+				fileName = "value.json"
+			}
 			if trimmed := strings.TrimSpace(content); len(trimmed) > 0 && (trimmed[0] == '{' || trimmed[0] == '[') {
 				var buf bytes.Buffer
 				if err := json.Indent(&buf, []byte(trimmed), "", "  "); err == nil {
 					content = buf.String()
-					fileName = "value.json"
+					if fileName == "" {
+						fileName = "value.json"
+					}
 				}
 			}
 			m.VimEditor = createVimEditor(content, m.Width-4, m.Height-10, fileName)
 			m.Screen = types.ScreenEditValue
 		}
 	case "a":
-		if m.CurrentKey != nil && m.CurrentKey.Type != types.KeyTypeString {
+		if m.CurrentKey != nil && m.CurrentKey.Type != types.KeyTypeString && m.CurrentKey.Type != types.KeyTypeJSON {
 			m.resetAddCollectionInputs()
 			m.Screen = types.ScreenAddToCollection
 		}
 	case "x":
-		if m.CurrentKey != nil && m.CurrentKey.Type != types.KeyTypeString {
+		if m.CurrentKey != nil && m.CurrentKey.Type != types.KeyTypeString && m.CurrentKey.Type != types.KeyTypeJSON {
 			m.SelectedItemIdx = 0
 			m.Screen = types.ScreenRemoveFromCollection
 		}
@@ -442,6 +448,8 @@ func (m Model) getCollectionLength() int {
 		return len(m.CurrentValue.HashValue)
 	case types.KeyTypeStream:
 		return len(m.CurrentValue.StreamValue)
+	case types.KeyTypeJSON:
+		return 0
 	default:
 		return 0
 	}

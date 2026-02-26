@@ -235,6 +235,8 @@ func (c *Commands) CreateKey(key string, keyType types.KeyType, value string, ex
 			}
 			fields := map[string]interface{}{field: value}
 			_, err = c.redis.XAdd(key, fields)
+		case types.KeyTypeJSON:
+			err = c.redis.JSONSet(key, value)
 		}
 		return types.KeySetMsg{Key: key, Err: err}
 	}
@@ -258,6 +260,16 @@ func (c *Commands) EditListElement(key string, index int64, value string) tea.Cm
 			return types.ValueEditedMsg{Key: key, Err: nil}
 		}
 		err := c.redis.LSet(key, index, value)
+		return types.ValueEditedMsg{Key: key, Err: err}
+	}
+}
+
+func (c *Commands) EditJSONValue(key, value string) tea.Cmd {
+	return func() tea.Msg {
+		if c.redis == nil {
+			return types.ValueEditedMsg{Key: key, Err: nil}
+		}
+		err := c.redis.JSONSet(key, value)
 		return types.ValueEditedMsg{Key: key, Err: err}
 	}
 }

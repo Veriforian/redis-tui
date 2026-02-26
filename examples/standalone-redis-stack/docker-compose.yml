@@ -1,0 +1,13 @@
+services:
+  redis:
+    image: redis/redis-stack-server:latest
+    ports:
+      - "6390:6390"
+    command: >
+      redis-stack-server
+        --port 6390
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6390", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3

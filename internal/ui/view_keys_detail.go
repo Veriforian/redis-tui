@@ -134,13 +134,15 @@ func (m Model) viewKeyDetail() string {
 				}
 			}
 		}
+	case types.KeyTypeJSON:
+		vc.WriteString(formatPossibleJSON(m.CurrentValue.JSONValue))
 	}
 
 	b.WriteString(valueBox.Render(strings.TrimSpace(vc.String())))
 	b.WriteString("\n\n")
 
 	helpText := "t:TTL  d:del  r:refresh  R:rename  c:copy"
-	if m.CurrentKey.Type == types.KeyTypeString {
+	if m.CurrentKey.Type == types.KeyTypeString || m.CurrentKey.Type == types.KeyTypeJSON {
 		helpText += "  e:edit"
 	} else {
 		helpText += "  a:add  x:remove"
@@ -189,6 +191,8 @@ func (m Model) viewAddKey() string {
 		valueLabel = "Field:"
 		showThirdInput = true
 		thirdLabel = "Value:"
+	case types.KeyTypeJSON:
+		valueLabel = "JSON Value:"
 	}
 
 	b.WriteString(keyStyle.Render(valueLabel))

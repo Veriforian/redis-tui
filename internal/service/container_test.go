@@ -128,6 +128,8 @@ func (m *mockCloseableRedis) ConfigSet(_, _ string) error                     { 
 func (m *mockCloseableRedis) ExportKeys(_ string) (map[string]any, error)     { return nil, nil }
 func (m *mockCloseableRedis) ImportKeys(_ map[string]any) (int, error)        { return 0, nil }
 func (m *mockCloseableRedis) GetLiveMetrics() (types.LiveMetricsData, error)  { return types.LiveMetricsData{}, nil }
+func (m *mockCloseableRedis) JSONGet(_ string) (string, error)                { return "", nil }
+func (m *mockCloseableRedis) JSONSet(_, _ string) error                       { return nil }
 func (m *mockCloseableRedis) SetIncludeTypes(_ bool)                          {}
 
 func TestNewContainer(t *testing.T) {

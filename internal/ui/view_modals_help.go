@@ -77,7 +77,7 @@ func (m Model) viewHelp() string {
 		{
 			title: "Key Detail",
 			bindings: [][2]string{
-				{"e", "Edit value (string)"},
+				{"e", "Edit value (string/json)"},
 				{"a", "Add to collection"},
 				{"x", "Remove from collection"},
 				{"R", "Rename key"},

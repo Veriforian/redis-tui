@@ -249,6 +249,22 @@ func (m Model) formatPreviewValue(maxWidth, maxLines int) string {
 			lines = append(lines, fmt.Sprintf("%s %s", idStyle.Render(entry.ID), dimStyle.Render(fieldStr)))
 		}
 
+	case types.KeyTypeJSON:
+		value := m.PreviewValue.JSONValue
+		formatted := formatPossibleJSON(value)
+
+		valueLines := strings.Split(formatted, "\n")
+		for i, line := range valueLines {
+			if i >= maxLines {
+				lines = append(lines, dimStyle.Render(fmt.Sprintf("... (%d more lines)", len(valueLines)-i)))
+				break
+			}
+			if len(line) > maxWidth {
+				line = line[:maxWidth-3] + "..."
+			}
+			lines = append(lines, normalStyle.Render(line))
+		}
+
 	default:
 		return dimStyle.Render("(unknown type)")
 	}

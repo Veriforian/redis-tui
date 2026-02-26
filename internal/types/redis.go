@@ -12,6 +12,7 @@ const (
 	KeyTypeZSet   KeyType = "zset"
 	KeyTypeHash   KeyType = "hash"
 	KeyTypeStream KeyType = "stream"
+	KeyTypeJSON   KeyType = "ReJSON-RL"
 )
 
 // RedisKey represents a key with metadata
@@ -32,6 +33,7 @@ type RedisValue struct {
 	ZSetValue   []ZSetMember
 	HashValue   map[string]string
 	StreamValue []StreamEntry
+	JSONValue   string
 }
 
 // ZSetMember represents a sorted set member with score

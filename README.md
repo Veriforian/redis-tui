@@ -35,7 +35,7 @@ go install github.com/davidbudnick/redis-tui@latest
 
 ### Browsing and Editing
 - **Key browser** with pattern filtering, regex, and fuzzy search
-- **All data types** — strings, lists, sets, sorted sets, hashes, and streams
+- **All data types** — strings, lists, sets, sorted sets, hashes, streams, and JSON (RedisJSON)
 - **Inline editing** with VIM keybindings for strings and collections
 - **Tree view** for hierarchical key navigation
 - **Favorites and recent keys** for quick access
@@ -217,7 +217,7 @@ rm -f $(go env GOPATH)/bin/redis-tui
 
 | Key | Action | Key | Action |
 | --- | --- | --- | --- |
-| `e` | Edit value (string) | `r` | Refresh value |
+| `e` | Edit value (string/json) | `r` | Refresh value |
 | `a` | Add to collection | `f` | Toggle favorite |
 | `x` | Remove from collection | `w` | Watch for changes |
 | `t` | Set TTL | `h` | View value history |
