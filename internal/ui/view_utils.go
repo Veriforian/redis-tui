@@ -150,12 +150,12 @@ func colorizeJSON(s string) string {
 	afterColon := false
 
 	// jq-style colors
-	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))     // Blue for keys
-	stringStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("34"))  // Green for string values
-	numberStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("33"))  // Yellow for numbers
-	boolStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("35"))    // Magenta for booleans
-	nullStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("90"))    // Gray for null
-	bracketStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")) // White for brackets
+	jsonKeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))     // Blue for keys
+	stringStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("34"))      // Green for string values
+	jsonNumberStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("33"))  // Yellow for numbers
+	boolStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("35"))        // Magenta for booleans
+	jsonNullStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("90"))    // Gray for null
+	bracketStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))     // White for brackets
 
 	i := 0
 	for i < len(s) {
@@ -178,15 +178,13 @@ func colorizeJSON(s string) string {
 		if c == '"' {
 			if !inString {
 				inString = true
-				// Determine if this is a key or value
 				isKey = !afterColon && !isAfterArrayStart(s, i)
 				afterColon = false
-				// Find the end of the string
 				end := findStringEnd(s, i+1)
 				if end > i {
 					str := s[i : end+1]
 					if isKey {
-						result.WriteString(keyStyle.Render(str))
+						result.WriteString(jsonKeyStyle.Render(str))
 					} else {
 						result.WriteString(stringStyle.Render(str))
 					}
@@ -200,7 +198,6 @@ func colorizeJSON(s string) string {
 		}
 
 		if !inString {
-			// Handle structural characters
 			if c == ':' {
 				result.WriteByte(c)
 				afterColon = true
@@ -221,18 +218,16 @@ func colorizeJSON(s string) string {
 				i++
 				continue
 			}
-			// Handle numbers
 			if (c >= '0' && c <= '9') || c == '-' {
 				end := i
 				for end < len(s) && (s[end] >= '0' && s[end] <= '9' || s[end] == '.' || s[end] == '-' || s[end] == 'e' || s[end] == 'E' || s[end] == '+') {
 					end++
 				}
-				result.WriteString(numberStyle.Render(s[i:end]))
+				result.WriteString(jsonNumberStyle.Render(s[i:end]))
 				i = end
 				afterColon = false
 				continue
 			}
-			// Handle true/false
 			if strings.HasPrefix(s[i:], "true") {
 				result.WriteString(boolStyle.Render("true"))
 				i += 4
@@ -245,9 +240,8 @@ func colorizeJSON(s string) string {
 				afterColon = false
 				continue
 			}
-			// Handle null
 			if strings.HasPrefix(s[i:], "null") {
-				result.WriteString(nullStyle.Render("null"))
+				result.WriteString(jsonNullStyle.Render("null"))
 				i += 4
 				afterColon = false
 				continue
@@ -265,7 +259,7 @@ func colorizeJSON(s string) string {
 func findStringEnd(s string, start int) int {
 	for i := start; i < len(s); i++ {
 		if s[i] == '\\' {
-			i++ // Skip escaped character
+			i++
 			continue
 		}
 		if s[i] == '"' {
@@ -277,14 +271,12 @@ func findStringEnd(s string, start int) int {
 
 // isAfterArrayStart checks if we're inside an array (value context)
 func isAfterArrayStart(s string, pos int) bool {
-	// Look backwards for the last structural character
 	for i := pos - 1; i >= 0; i-- {
 		c := s[i]
 		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
 			continue
 		}
 		if c == '[' || c == ',' {
-			// Check if we're in an array context
 			return isInArrayContext(s, i)
 		}
 		return false

@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"bytes"
+	"encoding/json"
 	"sort"
 	"strings"
 	"time"
@@ -12,12 +14,16 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func createVimEditor(content string, width, height int) vimtea.Editor {
-	editor := vimtea.NewEditor(
+func createVimEditor(content string, width, height int, fileName string) vimtea.Editor {
+	opts := []vimtea.EditorOption{
 		vimtea.WithContent(content),
 		vimtea.WithEnableStatusBar(true),
 		vimtea.WithEnableModeCommand(true),
-	)
+	}
+	if fileName != "" {
+		opts = append(opts, vimtea.WithFileName(fileName))
+	}
+	editor := vimtea.NewEditor(opts...)
 
 	// Add :w command to save
 	editor.AddCommand("w", func(buf vimtea.Buffer, args []string) tea.Cmd {
@@ -333,7 +339,16 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case "e":
 		if m.CurrentKey != nil && m.CurrentKey.Type == types.KeyTypeString {
-			m.VimEditor = createVimEditor(m.CurrentValue.StringValue, m.Width-4, m.Height-10)
+			content := m.CurrentValue.StringValue
+			fileName := ""
+			if trimmed := strings.TrimSpace(content); len(trimmed) > 0 && (trimmed[0] == '{' || trimmed[0] == '[') {
+				var buf bytes.Buffer
+				if err := json.Indent(&buf, []byte(trimmed), "", "  "); err == nil {
+					content = buf.String()
+					fileName = "value.json"
+				}
+			}
+			m.VimEditor = createVimEditor(content, m.Width-4, m.Height-10, fileName)
 			m.Screen = types.ScreenEditValue
 		}
 	case "a":
