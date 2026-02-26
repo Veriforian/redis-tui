@@ -154,6 +154,10 @@ type TickMsg struct{}
 
 type WatchTickMsg struct{}
 
+type SearchDebounceMsg struct {
+	Seq int
+}
+
 type TTLRefreshMsg struct {
 	Keys []RedisKey
 	Err  error

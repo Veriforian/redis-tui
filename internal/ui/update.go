@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strings"
 	"time"
 
 	"github.com/davidbudnick/redis-tui/internal/cmd"
@@ -24,6 +25,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+
+	case types.SearchDebounceMsg:
+		if msg.Seq == m.SearchSeq {
+			pattern := m.PatternInput.Value()
+			if pattern != "" && !strings.ContainsAny(pattern, "*?[]") {
+				pattern = "*" + pattern + "*"
+			}
+			m.KeyPattern = pattern
+			m.KeyCursor = 0
+			m.Loading = true
+			return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
+		}
+		return m, nil
 
 	case types.TickMsg:
 		return m.handleTickMsg()

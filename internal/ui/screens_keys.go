@@ -60,13 +60,22 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 		case "esc":
 			m.PatternInput.Blur()
-			m.PatternInput.SetValue(m.KeyPattern)
+			m.PatternInput.SetValue("")
+			m.KeyPattern = ""
+			m.KeyCursor = 0
+			m.SearchSeq++
+			m.Loading = true
+			return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
 		default:
 			var inputCmd tea.Cmd
 			m.PatternInput, inputCmd = m.PatternInput.Update(msg)
-			return m, inputCmd
+			m.SearchSeq++
+			seq := m.SearchSeq
+			debounceCmd := tea.Tick(300*time.Millisecond, func(t time.Time) tea.Msg {
+				return types.SearchDebounceMsg{Seq: seq}
+			})
+			return m, tea.Batch(inputCmd, debounceCmd)
 		}
-		return m, nil
 	}
 
 	switch msg.String() {
@@ -261,9 +270,15 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.ExpiringKeys = expiring
 		m.Screen = types.ScreenExpiringKeys
 	case "esc":
+		if m.KeyPattern != "" {
+			m.PatternInput.SetValue("")
+			m.KeyPattern = ""
+			m.KeyCursor = 0
+			m.SearchSeq++
+			m.Loading = true
+			return m, cmd.LoadKeysCmd(m.KeyPattern, 0, cmd.GetScanSize())
+		}
 		m.Screen = types.ScreenConnections
-		m.KeyPattern = ""
-		m.PatternInput.SetValue("")
 	}
 	return m, nil
 }

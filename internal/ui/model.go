@@ -25,6 +25,7 @@ type Model struct {
 	KeyCursor         uint64
 	KeyPattern        string
 	PatternInput      textinput.Model
+	SearchSeq         int
 	CurrentKey        *types.RedisKey
 	CurrentValue      types.RedisValue
 	AddKeyInputs      []textinput.Model
