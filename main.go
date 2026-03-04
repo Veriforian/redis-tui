@@ -196,7 +196,7 @@ func initConfig() (*db.Config, error) {
 			legacyData, readErr := os.ReadFile(legacyPath) // #nosec G304 -- path is constructed from homeDir + hardcoded strings
 			if readErr != nil {
 				slog.Warn("Failed to read legacy config for migration", "path", legacyPath, "error", readErr)
-			} else if writeErr := os.WriteFile(configPath, legacyData, 0600); writeErr != nil {
+			} else if writeErr := os.WriteFile(configPath, legacyData, 0600); writeErr != nil { // #nosec G703 -- path is constructed from homeDir + hardcoded strings
 				slog.Warn("Failed to write migrated config", "from", legacyPath, "to", configPath, "error", writeErr)
 			} else {
 				slog.Info("Migrated config from legacy path", "from", legacyPath, "to", configPath)
