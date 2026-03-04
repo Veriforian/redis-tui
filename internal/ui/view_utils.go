@@ -52,6 +52,9 @@ var (
 
 	// Pre-allocated hash field name style (for preview panel)
 	hashFieldStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+
+	// Pre-allocated zset score style (for preview panel)
+	zsetScoreStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 )
 
 func getTypeStyle(keyType types.KeyType) lipgloss.Style {

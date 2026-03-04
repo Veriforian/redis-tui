@@ -175,7 +175,7 @@ func (m Model) formatPreviewValue(maxWidth, maxLines int) string {
 			if len(member) > maxWidth-12 {
 				member = member[:maxWidth-15] + "..."
 			}
-			score := lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render(fmt.Sprintf("%.1f", v.Score))
+			score := zsetScoreStyle.Render(fmt.Sprintf("%.1f", v.Score))
 			lines = append(lines, fmt.Sprintf("%s → %s", score, normalStyle.Render(member)))
 		}
 
