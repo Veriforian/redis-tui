@@ -3,6 +3,8 @@ services:
     image: redis/redis-stack-server:latest
     ports:
       - "6390:6390"
+    volumes:
+      - redis-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6390
@@ -11,3 +13,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 3
+
+volumes:
+  redis-data:

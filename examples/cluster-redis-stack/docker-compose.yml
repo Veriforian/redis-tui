@@ -4,6 +4,8 @@ services:
     ports:
       - "6386:6386"
       - "16386:16386"
+    volumes:
+      - redis-node-1-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6386
@@ -12,7 +14,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6386
         --cluster-announce-bus-port 16386
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6386", "ping"]
       interval: 5s
@@ -24,6 +26,8 @@ services:
     ports:
       - "6387:6387"
       - "16387:16387"
+    volumes:
+      - redis-node-2-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6387
@@ -32,7 +36,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6387
         --cluster-announce-bus-port 16387
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6387", "ping"]
       interval: 5s
@@ -44,6 +48,8 @@ services:
     ports:
       - "6388:6388"
       - "16388:16388"
+    volumes:
+      - redis-node-3-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6388
@@ -52,7 +58,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6388
         --cluster-announce-bus-port 16388
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6388", "ping"]
       interval: 5s
@@ -64,6 +70,8 @@ services:
     ports:
       - "6389:6389"
       - "16389:16389"
+    volumes:
+      - redis-node-4-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6389
@@ -72,7 +80,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6389
         --cluster-announce-bus-port 16389
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6389", "ping"]
       interval: 5s
@@ -84,6 +92,8 @@ services:
     ports:
       - "6391:6391"
       - "16391:16391"
+    volumes:
+      - redis-node-5-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6391
@@ -92,7 +102,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6391
         --cluster-announce-bus-port 16391
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6391", "ping"]
       interval: 5s
@@ -104,6 +114,8 @@ services:
     ports:
       - "6392:6392"
       - "16392:16392"
+    volumes:
+      - redis-node-6-data:/var/lib/redis-stack
     command: >
       redis-stack-server
         --port 6392
@@ -112,7 +124,7 @@ services:
         --cluster-node-timeout 5000
         --cluster-announce-port 6392
         --cluster-announce-bus-port 16392
-        --appendonly no
+        --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "-p", "6392", "ping"]
       interval: 5s
@@ -137,13 +149,25 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        echo "Creating Redis Stack cluster..."
-        redis-cli --cluster create \
-          redis-node-1:6386 \
-          redis-node-2:6387 \
-          redis-node-3:6388 \
-          redis-node-4:6389 \
-          redis-node-5:6391 \
-          redis-node-6:6392 \
-          --cluster-replicas 1 --cluster-yes
-        echo "Cluster created."
+        if redis-cli -h redis-node-1 -p 6386 cluster info | grep -q "cluster_slots_assigned:0"; then
+          echo "Creating Redis Stack cluster..."
+          redis-cli --cluster create \
+            redis-node-1:6386 \
+            redis-node-2:6387 \
+            redis-node-3:6388 \
+            redis-node-4:6389 \
+            redis-node-5:6391 \
+            redis-node-6:6392 \
+            --cluster-replicas 1 --cluster-yes
+          echo "Cluster created."
+        else
+          echo "Cluster already initialized, skipping creation."
+        fi
+
+volumes:
+  redis-node-1-data:
+  redis-node-2-data:
+  redis-node-3-data:
+  redis-node-4-data:
+  redis-node-5-data:
+  redis-node-6-data:
