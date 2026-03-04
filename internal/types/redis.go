@@ -12,7 +12,8 @@ const (
 	KeyTypeZSet   KeyType = "zset"
 	KeyTypeHash   KeyType = "hash"
 	KeyTypeStream KeyType = "stream"
-	KeyTypeJSON   KeyType = "ReJSON-RL"
+	KeyTypeJSON        KeyType = "ReJSON-RL"
+	KeyTypeHyperLogLog KeyType = "hyperloglog"
 )
 
 // RedisKey represents a key with metadata
@@ -34,6 +35,7 @@ type RedisValue struct {
 	HashValue   map[string]string
 	StreamValue []StreamEntry
 	JSONValue   string
+	HLLCount    int64 // cardinality for HyperLogLog (from PFCOUNT)
 }
 
 // ZSetMember represents a sorted set member with score

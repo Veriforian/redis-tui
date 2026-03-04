@@ -113,6 +113,10 @@ type RedisService interface {
 	XAdd(key string, fields map[string]interface{}) (string, error)
 	XDel(key string, ids ...string) error
 
+	// HyperLogLog operations
+	PFAdd(key string, elements ...string) error
+	PFCount(key string) (int64, error)
+
 	// Database operations
 	SelectDB(db int) error
 	FlushDB() error

@@ -25,6 +25,15 @@ func (c *Client) GetValue(key string) (types.RedisValue, error) {
 		}
 		value.StringValue = val
 
+		// Detect HyperLogLog: raw value starts with "HYLL" magic bytes
+		if len(val) >= 4 && val[:4] == "HYLL" {
+			value.Type = types.KeyTypeHyperLogLog
+			count, err := c.cmdable().PFCount(c.ctx, key).Result()
+			if err == nil {
+				value.HLLCount = count
+			}
+		}
+
 	case "list":
 		vals, err := c.cmdable().LRange(c.ctx, key, 0, -1).Result()
 		if err != nil {

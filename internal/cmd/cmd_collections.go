@@ -119,3 +119,14 @@ func RemoveFromStreamCmd(key string, ids ...string) tea.Cmd {
 		return types.ItemRemovedFromCollectionMsg{Key: key, Err: err}
 	}
 }
+
+func AddToHLLCmd(key string, elements ...string) tea.Cmd {
+	return func() tea.Msg {
+		rc := getRedisClient()
+		if rc == nil {
+			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
+		}
+		err := rc.PFAdd(key, elements...)
+		return types.ItemAddedToCollectionMsg{Key: key, Err: err}
+	}
+}

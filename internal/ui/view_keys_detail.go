@@ -136,15 +136,20 @@ func (m Model) viewKeyDetail() string {
 		}
 	case types.KeyTypeJSON:
 		vc.WriteString(formatPossibleJSON(m.CurrentValue.JSONValue))
+	case types.KeyTypeHyperLogLog:
+		fmt.Fprintf(&vc, "Estimated cardinality: %d", m.CurrentValue.HLLCount)
 	}
 
 	b.WriteString(valueBox.Render(strings.TrimSpace(vc.String())))
 	b.WriteString("\n\n")
 
 	helpText := "t:TTL  d:del  r:refresh  R:rename  c:copy"
-	if m.CurrentKey.Type == types.KeyTypeString || m.CurrentKey.Type == types.KeyTypeJSON {
+	switch m.CurrentKey.Type {
+	case types.KeyTypeString, types.KeyTypeJSON:
 		helpText += "  e:edit"
-	} else {
+	case types.KeyTypeHyperLogLog:
+		helpText += "  a:add"
+	default:
 		helpText += "  a:add  x:remove"
 	}
 	helpText += "  esc:back"
@@ -193,6 +198,8 @@ func (m Model) viewAddKey() string {
 		thirdLabel = "Value:"
 	case types.KeyTypeJSON:
 		valueLabel = "JSON Value:"
+	case types.KeyTypeHyperLogLog:
+		valueLabel = "Element:"
 	}
 
 	b.WriteString(keyStyle.Render(valueLabel))

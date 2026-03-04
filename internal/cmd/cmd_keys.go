@@ -105,6 +105,8 @@ func CreateKeyCmd(key string, keyType types.KeyType, value string, extra string,
 			_, err = rc.XAdd(key, fields)
 		case types.KeyTypeJSON:
 			err = rc.JSONSet(key, value)
+		case types.KeyTypeHyperLogLog:
+			err = rc.PFAdd(key, value)
 		}
 		return types.KeySetMsg{Key: key, Err: err}
 	}

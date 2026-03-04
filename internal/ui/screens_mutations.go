@@ -41,7 +41,7 @@ func (m Model) handleAddKeyScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		typeOrder := []types.KeyType{
 			types.KeyTypeString, types.KeyTypeList, types.KeyTypeSet,
 			types.KeyTypeZSet, types.KeyTypeHash, types.KeyTypeStream,
-			types.KeyTypeJSON,
+			types.KeyTypeJSON, types.KeyTypeHyperLogLog,
 		}
 		for i, t := range typeOrder {
 			if t == m.AddKeyType {
@@ -203,6 +203,8 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			case types.KeyTypeStream:
 				fields := map[string]interface{}{value: extra}
 				return m, cmd.AddToStreamCmd(m.CurrentKey.Key, fields)
+			case types.KeyTypeHyperLogLog:
+				return m, cmd.AddToHLLCmd(m.CurrentKey.Key, value)
 			}
 		}
 	case "esc":

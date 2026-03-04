@@ -265,6 +265,9 @@ func (m Model) formatPreviewValue(maxWidth, maxLines int) string {
 			lines = append(lines, normalStyle.Render(line))
 		}
 
+	case types.KeyTypeHyperLogLog:
+		lines = append(lines, normalStyle.Render(fmt.Sprintf("Estimated cardinality: %d", m.PreviewValue.HLLCount)))
+
 	default:
 		return dimStyle.Render("(unknown type)")
 	}

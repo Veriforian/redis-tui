@@ -88,6 +88,8 @@ func (m Model) viewAddToCollection() string {
 			label1, label2 = "Field:", "Value:"
 		case types.KeyTypeStream:
 			label1, label2 = "Field:", "Value:"
+		case types.KeyTypeHyperLogLog:
+			label1, label2 = "Element:", ""
 		}
 
 		b.WriteString(keyStyle.Render(label1))

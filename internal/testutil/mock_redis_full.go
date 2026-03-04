@@ -43,6 +43,7 @@ type FullMockRedisClient struct {
 	JSONGetResult         string
 	JSONGetError          error
 	JSONSetError          error
+	PFCountResult         int64
 
 	// Configurable errors (one per method)
 	ConnectClusterError    error
@@ -89,6 +90,8 @@ type FullMockRedisClient struct {
 	KeyPrefixesError       error
 	SubscribeKeyspaceError error
 	UnsubscribeKSError     error
+	PFAddError             error
+	PFCountError           error
 
 	// Call tracking
 	Calls []string
@@ -392,6 +395,18 @@ func (m *FullMockRedisClient) JSONGet(_ string) (string, error) {
 func (m *FullMockRedisClient) JSONSet(_, _ string) error {
 	m.Calls = append(m.Calls, "JSONSet")
 	return m.JSONSetError
+}
+
+// HyperLogLog operations
+
+func (m *FullMockRedisClient) PFAdd(_ string, _ ...string) error {
+	m.Calls = append(m.Calls, "PFAdd")
+	return m.PFAddError
+}
+
+func (m *FullMockRedisClient) PFCount(_ string) (int64, error) {
+	m.Calls = append(m.Calls, "PFCount")
+	return m.PFCountResult, m.PFCountError
 }
 
 // Configuration

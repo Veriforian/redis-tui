@@ -41,8 +41,9 @@ func (m Model) handleKeyValueLoadedMsg(msg types.KeyValueLoadedMsg) (tea.Model, 
 		m.StatusMsg = "Error: " + msg.Err.Error()
 	} else {
 		m.CurrentValue = msg.Value
-		// On-demand type resolution: fill in type if it was not fetched during scan
-		if m.CurrentKey != nil && m.CurrentKey.Type == "" && msg.Value.Type != "" {
+		// On-demand type resolution: fill in type if it was not fetched during scan,
+		// or update when GetValue detected a subtype (e.g. string→hyperloglog)
+		if m.CurrentKey != nil && msg.Value.Type != "" && m.CurrentKey.Type != msg.Value.Type {
 			m.CurrentKey.Type = msg.Value.Type
 		}
 		m.Screen = types.ScreenKeyDetail
@@ -58,8 +59,9 @@ func (m Model) handleKeyPreviewLoadedMsg(msg types.KeyPreviewLoadedMsg) (tea.Mod
 	if len(m.Keys) > 0 && m.SelectedKeyIdx < len(m.Keys) && m.Keys[m.SelectedKeyIdx].Key == msg.Key {
 		m.PreviewKey = msg.Key
 		m.PreviewValue = msg.Value
-		// On-demand type resolution: fill in type if it was not fetched during scan
-		if m.Keys[m.SelectedKeyIdx].Type == "" && msg.Value.Type != "" {
+		// On-demand type resolution: fill in type if it was not fetched during scan,
+		// or update when GetValue detected a subtype (e.g. string→hyperloglog)
+		if msg.Value.Type != "" && m.Keys[m.SelectedKeyIdx].Type != msg.Value.Type {
 			m.Keys[m.SelectedKeyIdx].Type = msg.Value.Type
 		}
 	}

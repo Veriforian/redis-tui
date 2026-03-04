@@ -92,3 +92,17 @@ func (c *Client) HSetMap(key string, fields map[string]string) error {
 	}
 	return c.cmdable().HSet(c.ctx, key, args...).Err()
 }
+
+// PFAdd adds elements to a HyperLogLog
+func (c *Client) PFAdd(key string, elements ...string) error {
+	args := make([]interface{}, len(elements))
+	for i, v := range elements {
+		args[i] = v
+	}
+	return c.cmdable().PFAdd(c.ctx, key, args...).Err()
+}
+
+// PFCount returns the approximate cardinality of a HyperLogLog
+func (c *Client) PFCount(key string) (int64, error) {
+	return c.cmdable().PFCount(c.ctx, key).Result()
+}

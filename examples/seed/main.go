@@ -58,6 +58,7 @@ func main() {
 	seedSortedSets(ctx, rdb)
 	seedHashes(ctx, rdb)
 	seedStreams(ctx, rdb)
+	seedHyperLogLog(ctx, rdb)
 	seedTTLKeys(ctx, rdb)
 	seedNestedKeys(ctx, rdb)
 	seedJSONStrings(ctx, rdb)
@@ -204,6 +205,21 @@ func seedStreams(ctx context.Context, rdb redis.Cmdable) {
 		must(rdb.XAdd(ctx, &redis.XAddArgs{Stream: "stream:activity", Values: e}))
 	}
 	fmt.Println("  streams:      1 key")
+}
+
+func seedHyperLogLog(ctx context.Context, rdb redis.Cmdable) {
+	visitors := make([]interface{}, 20)
+	for i := range visitors {
+		visitors[i] = fmt.Sprintf("user:%d", 1000+i)
+	}
+	must(rdb.PFAdd(ctx, "hll:unique-visitors", visitors...))
+
+	pages := make([]interface{}, 15)
+	for i := range pages {
+		pages[i] = fmt.Sprintf("/page/%d", i+1)
+	}
+	must(rdb.PFAdd(ctx, "hll:unique-pages", pages...))
+	fmt.Println("  hyperloglog:  2 keys")
 }
 
 func seedTTLKeys(ctx context.Context, rdb redis.Cmdable) {

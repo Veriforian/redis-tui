@@ -30,8 +30,9 @@ var (
 		types.KeyTypeSet:    lipgloss.NewStyle().Foreground(lipgloss.Color("4")),
 		types.KeyTypeZSet:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
 		types.KeyTypeHash:   lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
-		types.KeyTypeStream: lipgloss.NewStyle().Foreground(lipgloss.Color("13")),
-		types.KeyTypeJSON:   lipgloss.NewStyle().Foreground(lipgloss.Color("208")),
+		types.KeyTypeStream:      lipgloss.NewStyle().Foreground(lipgloss.Color("13")),
+		types.KeyTypeJSON:        lipgloss.NewStyle().Foreground(lipgloss.Color("208")),
+		types.KeyTypeHyperLogLog: lipgloss.NewStyle().Foreground(lipgloss.Color("9")),
 	}
 	typeStyleBoldMap = map[types.KeyType]lipgloss.Style{
 		types.KeyTypeString: lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true),
@@ -39,8 +40,9 @@ var (
 		types.KeyTypeSet:    lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true),
 		types.KeyTypeZSet:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true),
 		types.KeyTypeHash:   lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true),
-		types.KeyTypeStream: lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Bold(true),
-		types.KeyTypeJSON:   lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true),
+		types.KeyTypeStream:      lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Bold(true),
+		types.KeyTypeJSON:        lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true),
+		types.KeyTypeHyperLogLog: lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true),
 	}
 	defaultTypeStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 	defaultTypeStyleBold = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
