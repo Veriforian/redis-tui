@@ -335,6 +335,7 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "r":
 		if m.CurrentKey != nil {
 			m.Loading = true
+			m.DetailScroll = 0
 			return m, tea.Batch(cmd.LoadKeyValueCmd(m.CurrentKey.Key), cmd.GetMemoryUsageCmd(m.CurrentKey.Key))
 		}
 	case "e":
@@ -420,18 +421,35 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Screen = types.ScreenJSONPath
 		}
 	case "up", "k":
-		if m.SelectedItemIdx > 0 {
+		if m.DetailScroll > 0 {
+			m.DetailScroll--
+		} else if m.SelectedItemIdx > 0 {
 			m.SelectedItemIdx--
 		}
 	case "down", "j":
-		maxIdx := m.getCollectionLength() - 1
-		if m.SelectedItemIdx < maxIdx {
-			m.SelectedItemIdx++
+		m.DetailScroll++
+		if m.DetailScroll > m.detailMaxScroll() {
+			m.DetailScroll = m.detailMaxScroll()
 		}
+	case "pgup", "ctrl+u":
+		m.DetailScroll -= 10
+		if m.DetailScroll < 0 {
+			m.DetailScroll = 0
+		}
+	case "pgdown", "ctrl+d":
+		m.DetailScroll += 10
+		if m.DetailScroll > m.detailMaxScroll() {
+			m.DetailScroll = m.detailMaxScroll()
+		}
+	case "home", "g":
+		m.DetailScroll = 0
+	case "end", "G":
+		m.DetailScroll = m.detailMaxScroll()
 	case "esc", "backspace":
 		m.Screen = types.ScreenKeys
 		m.CurrentKey = nil
 		m.SelectedItemIdx = 0
+		m.DetailScroll = 0
 		m.WatchActive = false
 	}
 	return m, nil

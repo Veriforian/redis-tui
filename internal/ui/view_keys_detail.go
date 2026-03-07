@@ -59,11 +59,16 @@ func (m Model) viewKeyDetail() string {
 	b.WriteString(keyStyle.Render("Value:"))
 	b.WriteString("\n")
 
+	boxWidth := m.Width - 6
+	if boxWidth < 40 {
+		boxWidth = 40
+	}
+
 	valueBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		Padding(1, 2).
-		Width(70)
+		Width(boxWidth)
 
 	var vc strings.Builder
 	switch m.CurrentValue.Type {
@@ -158,7 +163,42 @@ func (m Model) viewKeyDetail() string {
 		}
 	}
 
-	b.WriteString(valueBox.Render(strings.TrimSpace(vc.String())))
+	// Apply scrolling for long values
+	valueStr := strings.TrimSpace(vc.String())
+	valueLines := strings.Split(valueStr, "\n")
+	// Reserve lines for header (6) + border/padding (4) + help (2)
+	maxVisible := m.Height - 12
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	if len(valueLines) > maxVisible {
+		if m.DetailScroll > len(valueLines)-maxVisible {
+			m.DetailScroll = len(valueLines) - maxVisible
+		}
+		if m.DetailScroll < 0 {
+			m.DetailScroll = 0
+		}
+		end := m.DetailScroll + maxVisible
+		if end > len(valueLines) {
+			end = len(valueLines)
+		}
+		visible := valueLines[m.DetailScroll:end]
+		var scrollInfo string
+		if m.DetailScroll > 0 {
+			scrollInfo += dimStyle.Render(fmt.Sprintf("↑ %d more lines above", m.DetailScroll))
+			scrollInfo += "\n"
+		}
+		scrollInfo += strings.Join(visible, "\n")
+		remaining := len(valueLines) - end
+		if remaining > 0 {
+			scrollInfo += "\n"
+			scrollInfo += dimStyle.Render(fmt.Sprintf("↓ %d more lines below", remaining))
+		}
+		valueStr = scrollInfo
+	}
+
+	b.WriteString(valueBox.Render(valueStr))
 	b.WriteString("\n\n")
 
 	helpText := "t:TTL  d:del  r:refresh  R:rename  c:copy"
@@ -174,6 +214,54 @@ func (m Model) viewKeyDetail() string {
 	b.WriteString(helpStyle.Render(helpText))
 
 	return b.String()
+}
+
+func (m Model) detailContentLines() int {
+	return strings.Count(m.detailValueString(), "\n") + 1
+}
+
+func (m Model) detailValueString() string {
+	var vc strings.Builder
+	switch m.CurrentValue.Type {
+	case types.KeyTypeString:
+		vc.WriteString(formatPossibleJSON(m.CurrentValue.StringValue))
+	case types.KeyTypeList:
+		for i, v := range m.CurrentValue.ListValue {
+			fmt.Fprintf(&vc, "%d. %s\n", i, v)
+		}
+	case types.KeyTypeSet:
+		for _, v := range m.CurrentValue.SetValue {
+			fmt.Fprintf(&vc, "• %s\n", v)
+		}
+	case types.KeyTypeZSet:
+		for _, v := range m.CurrentValue.ZSetValue {
+			fmt.Fprintf(&vc, "%.2f: %s\n", v.Score, v.Member)
+		}
+	case types.KeyTypeHash:
+		for k, v := range m.CurrentValue.HashValue {
+			fmt.Fprintf(&vc, "%s: %s\n", k, v)
+		}
+	case types.KeyTypeStream:
+		for _, e := range m.CurrentValue.StreamValue {
+			fmt.Fprintf(&vc, "%s\n", e.ID)
+		}
+	case types.KeyTypeJSON:
+		vc.WriteString(formatPossibleJSON(m.CurrentValue.JSONValue))
+	}
+	return strings.TrimSpace(vc.String())
+}
+
+func (m Model) detailMaxScroll() int {
+	maxVisible := m.Height - 12
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+	totalLines := m.detailContentLines()
+	maxScroll := totalLines - maxVisible
+	if maxScroll < 0 {
+		return 0
+	}
+	return maxScroll
 }
 
 func (m Model) viewAddKey() string {

@@ -162,8 +162,7 @@ type Model struct {
 	PreviewKey    string
 	PreviewValue  types.RedisValue
 	PreviewScroll int
-	DetailScroll  int
-	DetailLines   []string
+	DetailScroll int
 
 	// Live metrics dashboard
 	LiveMetrics       *types.LiveMetrics
