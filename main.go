@@ -100,6 +100,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	host := fs.String("host", "", "Redis server hostname (required for quick-connect mode)")
 	port := fs.Int("port", 6379, "Redis server port")
 	password := fs.String("password", "", "Redis password")
+	username := fs.String("username", "", "Redis username")
 	dbNum := fs.Int("db", 0, "Redis database number (0-15)")
 	name := fs.String("name", "", "Connection display name")
 	cluster := fs.Bool("cluster", false, "Enable cluster mode")
@@ -117,6 +118,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	fs.StringVar(host, "h", "", "Redis server hostname (shorthand)")
 	fs.IntVar(port, "p", 6379, "Redis server port (shorthand)")
 	fs.StringVar(password, "a", "", "Redis password (shorthand)")
+	fs.StringVar(password, "u", "", "Redis username (shorthand)")
 	fs.IntVar(dbNum, "n", 0, "Redis database number (shorthand)")
 
 	fs.Usage = func() {
@@ -126,6 +128,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 		fmt.Fprintf(os.Stderr, "  -h, --host string       Redis server hostname (required for quick-connect)\n")
 		fmt.Fprintf(os.Stderr, "  -p, --port int          Redis server port (default 6379)\n")
 		fmt.Fprintf(os.Stderr, "  -a, --password string   Redis password\n")
+		fmt.Fprintf(os.Stderr, "  -u, --username string   Redis username\n")
 		fmt.Fprintf(os.Stderr, "  -n, --db int            Redis database number, 0-15 (default 0)\n")
 		fmt.Fprintf(os.Stderr, "      --name string       Connection display name\n")
 		fmt.Fprintf(os.Stderr, "      --cluster           Enable cluster mode\n")
@@ -161,6 +164,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 		Host:       *host,
 		Port:       *port,
 		Password:   *password,
+		Username:   *username,
 		DB:         *dbNum,
 		UseCluster: *cluster,
 	}
@@ -191,7 +195,7 @@ func initConfig() (*db.Config, error) {
 	}
 
 	configDir := filepath.Join(homeDir, ".config", "redis-tui")
-	if err := os.MkdirAll(configDir, 0750); err != nil {
+	if err := os.MkdirAll(configDir, 0o750); err != nil {
 		return nil, err
 	}
 
@@ -204,7 +208,7 @@ func initConfig() (*db.Config, error) {
 			legacyData, readErr := os.ReadFile(legacyPath) // #nosec G304 -- path is constructed from homeDir + hardcoded strings
 			if readErr != nil {
 				slog.Warn("Failed to read legacy config for migration", "path", legacyPath, "error", readErr)
-			} else if writeErr := os.WriteFile(configPath, legacyData, 0600); writeErr != nil { // #nosec G703 -- path is constructed from homeDir + hardcoded strings
+			} else if writeErr := os.WriteFile(configPath, legacyData, 0o600); writeErr != nil { // #nosec G703 -- path is constructed from homeDir + hardcoded strings
 				slog.Warn("Failed to write migrated config", "from", legacyPath, "to", configPath, "error", writeErr)
 			} else {
 				slog.Info("Migrated config from legacy path", "from", legacyPath, "to", configPath)

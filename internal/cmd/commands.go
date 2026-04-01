@@ -57,12 +57,12 @@ func (c *Commands) LoadConnections() tea.Cmd {
 	}
 }
 
-func (c *Commands) AddConnection(name, host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
+func (c *Commands) AddConnection(name, host string, port int, password string, username string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
 		if c.config == nil {
 			return types.ConnectionAddedMsg{Err: nil}
 		}
-		conn, err := c.config.AddConnection(name, host, port, password, dbNum, useCluster)
+		conn, err := c.config.AddConnection(name, host, port, password, username, dbNum, useCluster)
 		if err != nil {
 			slog.Error("Failed to add connection", "error", err)
 		}
@@ -70,12 +70,12 @@ func (c *Commands) AddConnection(name, host string, port int, password string, d
 	}
 }
 
-func (c *Commands) UpdateConnection(id int64, name, host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
+func (c *Commands) UpdateConnection(id int64, name, host string, port int, password string, username string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
 		if c.config == nil {
 			return types.ConnectionUpdatedMsg{Err: nil}
 		}
-		conn, err := c.config.UpdateConnection(id, name, host, port, password, dbNum, useCluster)
+		conn, err := c.config.UpdateConnection(id, name, host, port, password, username, dbNum, useCluster)
 		if err != nil {
 			slog.Error("Failed to update connection", "error", err)
 		}
@@ -93,7 +93,7 @@ func (c *Commands) DeleteConnection(id int64) tea.Cmd {
 	}
 }
 
-func (c *Commands) Connect(host string, port int, password string, dbNum int, useCluster bool) tea.Cmd {
+func (c *Commands) Connect(host string, port int, password string, username string, dbNum int, useCluster bool) tea.Cmd {
 	return func() tea.Msg {
 		if c.redis == nil {
 			return types.ConnectedMsg{Err: nil}
@@ -102,7 +102,7 @@ func (c *Commands) Connect(host string, port int, password string, dbNum int, us
 		if useCluster {
 			err = c.redis.ConnectCluster([]string{fmt.Sprintf("%s:%d", host, port)}, password)
 		} else {
-			err = c.redis.Connect(host, port, password, dbNum)
+			err = c.redis.Connect(host, port, password, username, dbNum)
 		}
 		if err != nil {
 			slog.Error("Failed to connect", "error", err)
@@ -130,7 +130,7 @@ func (c *Commands) AutoConnect(conn types.Connection) tea.Cmd {
 			}
 			err = c.redis.ConnectWithTLS(conn.Host, conn.Port, conn.Password, conn.DB, tlsCfg)
 		} else {
-			err = c.redis.Connect(conn.Host, conn.Port, conn.Password, conn.DB)
+			err = c.redis.Connect(conn.Host, conn.Port, conn.Password, conn.Username, conn.DB)
 		}
 		if err != nil {
 			slog.Error("Failed to connect", "error", err)
@@ -619,7 +619,7 @@ func (c *Commands) ExportKeys(pattern, filename string) tea.Cmd {
 			return types.ExportCompleteMsg{Filename: filename, Err: err}
 		}
 
-		err = os.WriteFile(filename, jsonData, 0600)
+		err = os.WriteFile(filename, jsonData, 0o600)
 		return types.ExportCompleteMsg{Filename: filename, KeyCount: len(data), Err: err}
 	}
 }
@@ -646,12 +646,12 @@ func (c *Commands) ImportKeys(filename string) tea.Cmd {
 	}
 }
 
-func (c *Commands) TestConnection(host string, port int, password string, db int) tea.Cmd {
+func (c *Commands) TestConnection(host string, port int, password string, username string, db int) tea.Cmd {
 	return func() tea.Msg {
 		if c.redis == nil {
 			return types.ConnectionTestMsg{Success: false, Err: nil}
 		}
-		latency, err := c.redis.TestConnection(host, port, password, db)
+		latency, err := c.redis.TestConnection(host, port, password, username, db)
 		return types.ConnectionTestMsg{Success: err == nil, Latency: latency, Err: err}
 	}
 }

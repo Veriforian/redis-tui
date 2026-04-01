@@ -274,7 +274,7 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.ExpiringKeys = expiring
 		m.Screen = types.ScreenExpiringKeys
-	case "esc":
+	case "esc", "q":
 		if m.KeyPattern != "" {
 			m.PatternInput.SetValue("")
 			m.KeyPattern = ""
@@ -444,7 +444,7 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.DetailScroll = 0
 	case "end", "G":
 		m.DetailScroll = m.detailMaxScroll()
-	case "esc", "backspace":
+	case "esc", "q", "backspace":
 		m.Screen = types.ScreenKeys
 		m.CurrentKey = nil
 		m.SelectedItemIdx = 0

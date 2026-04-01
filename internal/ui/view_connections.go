@@ -308,8 +308,8 @@ func (m Model) renderConnForm() string {
 	var b strings.Builder
 
 	// Fields 0-3: Name, Host, Port, Password (text inputs)
-	textLabels := []string{"Name", "Host", "Port", "Password"}
-	for i := range 4 {
+	textLabels := []string{"Name", "Host", "Port", "Password", "Username"}
+	for i := 0; i < 5; i++ {
 		labelStyle := keyStyle
 		if m.ConnFocusIdx == i {
 			labelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
@@ -322,7 +322,7 @@ func (m Model) renderConnForm() string {
 
 	// Field 4: Cluster toggle
 	clusterLabelStyle := keyStyle
-	if m.ConnFocusIdx == 4 {
+	if m.ConnFocusIdx == 5 {
 		clusterLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
 	}
 	b.WriteString(clusterLabelStyle.Render("Cluster:"))
@@ -332,7 +332,7 @@ func (m Model) renderConnForm() string {
 		checkbox = "[x] Cluster Mode"
 	}
 	checkboxStyle := normalStyle
-	if m.ConnFocusIdx == 4 {
+	if m.ConnFocusIdx == 5 {
 		checkboxStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("39"))
 	}
 	b.WriteString(checkboxStyle.Render(checkbox))
@@ -341,12 +341,12 @@ func (m Model) renderConnForm() string {
 	// Field 5: Database (only when not in cluster mode)
 	if !m.ConnClusterMode {
 		dbLabelStyle := keyStyle
-		if m.ConnFocusIdx == 5 {
+		if m.ConnFocusIdx == 6 {
 			dbLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
 		}
 		b.WriteString(dbLabelStyle.Render("Database:"))
 		b.WriteString("\n")
-		b.WriteString(m.ConnInputs[4].View())
+		b.WriteString(m.ConnInputs[5].View())
 		b.WriteString("\n\n")
 	}
 

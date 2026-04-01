@@ -10,7 +10,7 @@ import (
 
 func (m Model) handleHelpScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "esc", "enter", "?":
+	case "esc", "q", "enter", "?":
 		if m.CurrentConn != nil {
 			m.Screen = types.ScreenKeys
 		} else {
@@ -22,7 +22,7 @@ func (m Model) handleHelpScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleServerInfoScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "esc", "enter":
+	case "esc", "q", "enter":
 		m.Screen = types.ScreenKeys
 	case "r":
 		m.Loading = true
@@ -42,7 +42,7 @@ func (m Model) handlePubSubScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.PublishMessage(m.PubSubInput[0].Value(), m.PubSubInput[1].Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenPubSubChannels
 		m.resetPubSubInputs()
 	default:
@@ -71,7 +71,7 @@ func (m Model) handleSwitchDBScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		} else {
 			m.StatusMsg = "Invalid database number (0-15)"
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.DBSwitchInput.Blur()
 	default:
@@ -93,7 +93,7 @@ func (m Model) handleExportScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 			return m, m.Cmds.ExportKeys(pattern, m.ExportInput.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.ExportInput.Blur()
 	default:
@@ -111,7 +111,7 @@ func (m Model) handleImportScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.ImportKeys(m.ImportInput.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.ImportInput.Blur()
 	default:
@@ -124,7 +124,7 @@ func (m Model) handleImportScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleSlowLogScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "esc", "enter":
+	case "esc", "q", "enter":
 		m.Screen = types.ScreenKeys
 	case "r":
 		m.Loading = true
@@ -140,7 +140,7 @@ func (m Model) handleLuaScriptScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.EvalLuaScript(m.LuaScriptInput.Value(), []string{})
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.LuaScriptInput.Blur()
 	default:
@@ -154,7 +154,7 @@ func (m Model) handleLuaScriptScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleLogsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.ShowingLogDetail {
 		switch msg.String() {
-		case "esc", "enter":
+		case "esc", "q", "enter":
 			m.ShowingLogDetail = false
 		}
 		return m, nil
@@ -166,7 +166,7 @@ func (m Model) handleLogsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg.String() {
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	case "up", "k":
 		if m.LogCursor > 0 {
@@ -255,7 +255,7 @@ func (m Model) handlePubSubChannelsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "p":
 		m.Screen = types.ScreenPubSub
 		m.resetPubSubInputs()
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil

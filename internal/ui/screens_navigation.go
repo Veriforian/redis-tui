@@ -32,7 +32,7 @@ func (m Model) handleFavoritesScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if len(m.Favorites) > 0 && m.SelectedFavIdx < len(m.Favorites) {
 			return m, m.Cmds.RemoveFavorite(m.Favorites[m.SelectedFavIdx].ConnectionID, m.Favorites[m.SelectedFavIdx].Key)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil
@@ -60,7 +60,7 @@ func (m Model) handleRecentKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil
@@ -93,7 +93,7 @@ func (m Model) handleTreeViewScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil
@@ -118,7 +118,7 @@ func (m Model) handleTemplatesScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.AddKeyType = template.Type
 			m.Screen = types.ScreenAddKey
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil
@@ -141,7 +141,7 @@ func (m Model) handleValueHistoryScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.EditStringValue(m.CurrentKey.Key, entry.Value.StringValue)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 	}
 	return m, nil
@@ -151,7 +151,7 @@ func (m Model) handleKeyspaceEventsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "c":
 		m.KeyspaceEvents = nil
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil
@@ -159,7 +159,7 @@ func (m Model) handleKeyspaceEventsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleWatchKeyScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "esc":
+	case "esc", "q":
 		m.WatchActive = false
 		m.Screen = types.ScreenKeyDetail
 	}
@@ -176,7 +176,7 @@ func (m Model) handleConnectionGroupsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd)
 		if m.SelectedGroupIdx < len(m.ConnectionGroups)-1 {
 			m.SelectedGroupIdx++
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenConnections
 	}
 	return m, nil
@@ -199,7 +199,7 @@ func (m Model) handleExpiringKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Screen = types.ScreenKeyDetail
 			return m, m.Cmds.LoadKeyValue(key.Key)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 	}
 	return m, nil

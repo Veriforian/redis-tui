@@ -71,7 +71,7 @@ func (m Model) handleAddKeyScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				0,
 			)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.resetAddKeyInputs()
 	default:
@@ -102,7 +102,7 @@ func (m Model) handleConfirmDeleteScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "flushdb":
 			return m, m.Cmds.FlushDB()
 		}
-	case "n", "N", "esc":
+	case "n", "N", "esc", "q":
 		switch m.ConfirmType {
 		case "connection":
 			m.Screen = types.ScreenConnections
@@ -132,7 +132,7 @@ func (m Model) handleTTLEditorScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.SetTTL(m.CurrentKey.Key, ttl)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 		m.TTLInput.Blur()
 	default:
@@ -250,7 +250,7 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 				return m, m.Cmds.AddToGeo(m.CurrentKey.Key, lon, lat, value)
 			}
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 		m.resetAddCollectionInputs()
 	default:
@@ -311,7 +311,7 @@ func (m Model) handleRemoveFromCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.
 				}
 			}
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 	}
 	return m, nil
@@ -324,7 +324,7 @@ func (m Model) handleRenameKeyScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.RenameKey(m.CurrentKey.Key, m.RenameInput.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 		m.RenameInput.Blur()
 	default:
@@ -342,7 +342,7 @@ func (m Model) handleCopyKeyScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.CopyKey(m.CurrentKey.Key, m.CopyInput.Value(), false)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 		m.CopyInput.Blur()
 	default:
@@ -360,7 +360,7 @@ func (m Model) handleBulkDeleteScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.BulkDelete(m.BulkDeleteInput.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.BulkDeleteInput.Blur()
 	default:
@@ -390,7 +390,7 @@ func (m Model) handleBatchTTLScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				return m, m.Cmds.BatchSetTTL(m.BatchTTLPattern.Value(), ttl)
 			}
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.BatchTTLInput.Blur()
 		m.BatchTTLPattern.Blur()

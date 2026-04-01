@@ -28,6 +28,7 @@ type Client struct {
 	host     string
 	port     int
 	password string
+	username string
 	db       int
 
 	isCluster      bool

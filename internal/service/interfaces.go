@@ -13,8 +13,8 @@ import (
 type ConfigService interface {
 	// Connection management
 	ListConnections() ([]types.Connection, error)
-	AddConnection(name, host string, port int, password string, db int, useCluster bool) (types.Connection, error)
-	UpdateConnection(id int64, name, host string, port int, password string, db int, useCluster bool) (types.Connection, error)
+	AddConnection(name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
+	UpdateConnection(id int64, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
 	DeleteConnection(id int64) error
 
 	// Favorites management
@@ -59,12 +59,12 @@ type ConfigService interface {
 // RedisService defines the interface for Redis operations.
 type RedisService interface {
 	// Connection management
-	Connect(host string, port int, password string, db int) error
+	Connect(host string, port int, password string, username string, db int) error
 	ConnectWithTLS(host string, port int, password string, db int, tlsConfig *tls.Config) error
 	ConnectCluster(addrs []string, password string) error
 	Disconnect() error
 	IsCluster() bool
-	TestConnection(host string, port int, password string, db int) (time.Duration, error)
+	TestConnection(host string, port int, password string, username string, db int) (time.Duration, error)
 
 	// Key operations
 	GetTotalKeys() int64

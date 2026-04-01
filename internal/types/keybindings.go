@@ -74,7 +74,7 @@ func DefaultKeyBindings() KeyBindings {
 
 		// Actions
 		Select:  "enter",
-		Back:    "esc",
+		Back:    "<",
 		Quit:    "q",
 		Help:    "?",
 		Refresh: "r",

@@ -47,7 +47,7 @@ func NewConfig(configPath string) (*Config, error) {
 
 	// Ensure directory exists
 	dir := filepath.Dir(configPath)
-	if err := os.MkdirAll(dir, 0750); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +120,7 @@ func (c *Config) save() error {
 	safeConnections := make([]types.Connection, len(c.Connections))
 	for i, conn := range c.Connections {
 		safeConnections[i] = conn
-		safeConnections[i].Password = "" // Don't save password to JSON
+		// safeConnections[i].Password = "" // Don't save password to JSON
 		if safeConnections[i].SSHConfig != nil {
 			sshCopy := *conn.SSHConfig
 			sshCopy.Password = ""
@@ -149,7 +149,7 @@ func (c *Config) save() error {
 		return err
 	}
 
-	return os.WriteFile(c.path, data, 0600)
+	return os.WriteFile(c.path, data, 0o600)
 }
 
 func (c *Config) Close() error {
@@ -170,7 +170,7 @@ func (c *Config) ListConnections() ([]types.Connection, error) {
 	return result, nil
 }
 
-func (c *Config) AddConnection(name, host string, port int, password string, db int, useCluster bool) (types.Connection, error) {
+func (c *Config) AddConnection(name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -181,6 +181,7 @@ func (c *Config) AddConnection(name, host string, port int, password string, db 
 		Host:       host,
 		Port:       port,
 		Password:   password,
+		Username:   username,
 		DB:         db,
 		UseCluster: useCluster,
 		Created:    now,
@@ -199,7 +200,7 @@ func (c *Config) AddConnection(name, host string, port int, password string, db 
 	return conn, nil
 }
 
-func (c *Config) UpdateConnection(id int64, name, host string, port int, password string, db int, useCluster bool) (types.Connection, error) {
+func (c *Config) UpdateConnection(id int64, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -212,6 +213,7 @@ func (c *Config) UpdateConnection(id int64, name, host string, port int, passwor
 				Host:       host,
 				Port:       port,
 				Password:   password,
+				Username:   username,
 				DB:         db,
 				Group:      conn.Group,
 				Color:      conn.Color,

@@ -138,7 +138,7 @@ func (m *FullMockRedisClient) IsCluster() bool {
 	return m.IsClusterResult
 }
 
-func (m *FullMockRedisClient) TestConnection(_ string, _ int, _ string, _ int) (time.Duration, error) {
+func (m *FullMockRedisClient) TestConnection(_ string, _ int, _ string, _ string, _ int) (time.Duration, error) {
 	m.Calls = append(m.Calls, "TestConnection")
 	return m.TestConnectionLatency, m.TestConnectionError
 }

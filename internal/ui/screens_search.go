@@ -18,7 +18,7 @@ func (m Model) handleSearchValuesScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Screen = types.ScreenKeys
 			return m, m.Cmds.SearchByValue(pattern, m.SearchValueInput.Value(), 100)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.SearchValueInput.Blur()
 	default:
@@ -36,7 +36,7 @@ func (m Model) handleRegexSearchScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.RegexSearch(m.RegexSearchInput.Value(), 100)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.RegexSearchInput.Blur()
 	default:
@@ -54,7 +54,7 @@ func (m Model) handleFuzzySearchScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.FuzzySearch(m.FuzzySearchInput.Value(), 100)
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.FuzzySearchInput.Blur()
 	default:
@@ -82,7 +82,7 @@ func (m Model) handleCompareKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.CompareKeys(m.CompareKey1Input.Value(), m.CompareKey2Input.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeys
 		m.CompareKey1Input.Blur()
 		m.CompareKey2Input.Blur()
@@ -107,7 +107,7 @@ func (m Model) handleJSONPathScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.Loading = true
 			return m, m.Cmds.JSONPathQuery(m.CurrentKey.Key, m.JSONPathInput.Value())
 		}
-	case "esc":
+	case "esc", "q":
 		m.Screen = types.ScreenKeyDetail
 		m.JSONPathInput.Blur()
 	default:

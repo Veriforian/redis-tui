@@ -45,7 +45,7 @@ func (c *Client) cleanup() {
 }
 
 // Connect establishes a connection to Redis
-func (c *Client) Connect(host string, port int, password string, db int) error {
+func (c *Client) Connect(host string, port int, password string, username string, db int) error {
 	c.cleanup()
 
 	client := redis.NewClient(defaultOptions(fmt.Sprintf("%s:%d", host, port), password, db))
@@ -54,6 +54,7 @@ func (c *Client) Connect(host string, port int, password string, db int) error {
 	c.host = host
 	c.port = port
 	c.password = password
+	c.username = username
 	c.db = db
 	c.client = client
 	ctx := c.ctx
