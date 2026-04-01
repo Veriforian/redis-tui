@@ -119,7 +119,7 @@ func connInputIndex(focusIdx int) int {
 		return focusIdx
 	}
 	if focusIdx == 6 {
-		return 4 // Database input
+		return 5 // Database input
 	}
 	return -1 // cluster toggle, no text input
 }
