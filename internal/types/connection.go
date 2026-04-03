@@ -15,8 +15,8 @@ type Connection struct {
 	Name       string     `json:"name"`
 	Host       string     `json:"host"`
 	Port       int        `json:"port"`
-	Password   string     `json:"-"` // #nosec G117 -- stored in local user config. - ensures marshal never returns value
-	Username   string     `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	Password   string     `json:"-" sensitive:"true" prefix:"redis"` // #nosec G117 -- stored in local user config. - ensures marshal never returns value
+	Username   string     `json:"-" sensitive:"true" prefix:"redis"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 	DB         int        `json:"db"`
 	Group      string     `json:"group,omitempty"`
 	Color      string     `json:"color,omitempty"`
@@ -33,10 +33,10 @@ type Connection struct {
 type SSHConfig struct {
 	Host           string `json:"host"`
 	Port           int    `json:"port"`
-	User           string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
-	Password       string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	User           string `json:"-" sensitive:"true" prefix:"ssh"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	Password       string `json:"-" sensitive:"true" prefix:"ssh"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 	PrivateKeyPath string `json:"private_key_path,omitempty"`
-	Passphrase     string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	Passphrase     string `json:"-" sensitive:"true" prefix:"ssh"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 }
 
 // TLSConfig stores TLS/SSL configuration

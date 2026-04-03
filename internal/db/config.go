@@ -2,8 +2,10 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"sync"
 	"time"
@@ -154,29 +156,9 @@ func (c *Config) load() error {
 			continue
 		}
 
-		redisPass, redisPassError := c.store.Load(conn.ID + "-redis-password")
-		redisUsername, redisUsernameError := c.store.Load(conn.ID + "-redis-username")
-
-		if redisPassError == nil {
-			c.Connections[i].Password = redisPass
-		}
-		if redisUsernameError == nil {
-			c.Connections[i].Username = redisUsername
-		}
-		if conn.SSHConfig != nil {
-			sshPass, sshPassError := c.store.Load(conn.ID + "-ssh-password")
-			sshPassphrase, sshPassPhraseError := c.store.Load(conn.ID + "-ssh-passphrase")
-			sshUsername, sshUsernameError := c.store.Load(conn.ID + "-ssh-username")
-
-			if sshPassError == nil {
-				c.Connections[i].SSHConfig.Password = sshPass
-			}
-			if sshPassPhraseError == nil {
-				c.Connections[i].SSHConfig.Passphrase = sshPassphrase
-			}
-			if sshUsernameError == nil {
-				c.Connections[i].SSHConfig.User = sshUsername
-			}
+		connVal := reflect.ValueOf(&c.Connections[i])
+		if err := syncSecrets(connVal, c.Connections[i].ID, c.store, true); err != nil {
+			return err
 		}
 	}
 
@@ -190,24 +172,8 @@ func (c *Config) save() error {
 		}
 
 		// Store creds in secure storage
-		if redisPassErr := c.store.Save(conn.ID+"-redis-password", conn.Password); redisPassErr != nil {
-			return redisPassErr
-		}
-
-		if redisUserErr := c.store.Save(conn.ID+"-redis-username", conn.Username); redisUserErr != nil {
-			return redisUserErr
-		}
-
-		if conn.SSHConfig != nil {
-			if sshPassErr := c.store.Save(conn.ID+"-ssh-password", conn.SSHConfig.Password); sshPassErr != nil {
-				return sshPassErr
-			}
-			if sshPassphraseErr := c.store.Save(conn.ID+"-ssh-passphrase", conn.SSHConfig.Passphrase); sshPassphraseErr != nil {
-				return sshPassphraseErr
-			}
-			if sshUserErr := c.store.Save(conn.ID+"-ssh-username", conn.SSHConfig.User); sshUserErr != nil {
-				return sshUserErr
-			}
+		if err := syncSecrets(reflect.ValueOf(conn), conn.ID, c.store, false); err != nil {
+			return err
 		}
 	}
 
@@ -217,6 +183,48 @@ func (c *Config) save() error {
 	}
 
 	return os.WriteFile(c.path, data, 0o600)
+}
+
+// syncSecrets walks the struct recursively and moves data between the struct fields and the SecretStore
+func syncSecrets(v reflect.Value, connID string, store *secstore.Store, isLoading bool) error {
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		fieldV := v.Field(i)
+		fieldT := t.Field(i)
+
+		if fieldV.Kind() == reflect.Struct {
+			if err := syncSecrets(fieldV, connID, store, isLoading); err != nil {
+				return err
+			}
+		}
+
+		if fieldT.Tag.Get("sensitive") == "true" {
+			prefix := fieldT.Tag.Get("prefix")
+			secretKey := fmt.Sprintf("%s-%s-%s", connID, prefix, fieldT.Name)
+
+			if isLoading {
+				val, err := store.Load(secretKey)
+				if err != nil {
+					return err
+				}
+
+				if fieldV.CanSet() && fieldV.Kind() == reflect.String {
+					fieldV.SetString(val)
+				}
+			} else {
+				val := fieldV.String()
+				if err := store.Save(secretKey, val); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (c *Config) Close() error {

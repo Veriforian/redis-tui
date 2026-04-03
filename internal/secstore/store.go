@@ -24,6 +24,7 @@ const (
 	vaultFileName = "secrets.enc"
 )
 
+// Store stores secrets in memory and on disk.
 type Store struct {
 	mu        sync.RWMutex
 	kr        keyring.Keyring
@@ -33,6 +34,7 @@ type Store struct {
 	vaultPath string
 }
 
+// NewStore creates a new Store instance.
 func NewStore(configDir string, userSecret string) (*Store, error) {
 	kr, err := keyring.Open(keyring.Config{
 		ServiceName: serviceName,
@@ -107,6 +109,7 @@ func NewStore(configDir string, userSecret string) (*Store, error) {
 	return &Store{kr: krFile, configDir: configDir}, nil
 }
 
+// ensureLocalKey ensures a local key exists at the given path.
 func ensureLocalKey(path string) ([]byte, error) {
 	if key, err := os.ReadFile(path); err == nil {
 		return key, nil
@@ -124,6 +127,7 @@ func ensureLocalKey(path string) ([]byte, error) {
 	return key, nil
 }
 
+// Save saves a secret, commiting it to disk. Falls back to local keyring if not using masterkey.
 func (s *Store) Save(connectionID string, password string) error {
 	if s.masterKey != nil {
 		s.Set(connectionID, password)
@@ -152,6 +156,7 @@ func (s *Store) Save(connectionID string, password string) error {
 	})
 }
 
+// Load retrieves a secret from memory instantly, falls back to keyring if not using masterkey.
 func (s *Store) Load(connectionID string) (string, error) {
 	if s.masterKey != nil {
 		item, err := s.Get(connectionID)
@@ -228,6 +233,7 @@ func (s *Store) Commit() error {
 	return os.WriteFile(s.vaultPath, ciphertext, 0o600)
 }
 
+// LoadVault loads the encrypted secrets from disk.
 func (s *Store) LoadVault() error {
 	data, err := os.ReadFile(s.vaultPath)
 	if err != nil {
