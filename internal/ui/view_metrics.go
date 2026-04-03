@@ -155,12 +155,19 @@ func (m Model) viewLiveMetrics() string {
 	b.WriteString(dimStyle.Render(strings.Repeat("─", separatorWidth)))
 	b.WriteString("\n\n")
 
+	// Dynamic chart height to fit terminal:
+	// Header/cards ~15 lines, help ~2 lines, each chart adds height + 5 (border*2, title, axis, gap)
+	// Total: 5*chartHeight + 42 must fit in m.Height
+	chartHeight := (m.Height - 42) / 5
+	chartHeight = max(chartHeight, 2)
+	chartHeight = min(chartHeight, 8)
+
 	// Ops/sec chart
 	opsData := make([]float64, len(m.LiveMetrics.DataPoints))
 	for i, dp := range m.LiveMetrics.DataPoints {
 		opsData[i] = dp.OpsPerSec
 	}
-	b.WriteString(metricsChartBorder.Render(renderLineChart("Ops/sec", opsData, chartWidth, 6, lipgloss.Color("39"))))
+	b.WriteString(metricsChartBorder.Render(renderLineChart("Ops/sec", opsData, chartWidth, chartHeight, lipgloss.Color("39"))))
 	b.WriteString("\n")
 
 	// Memory chart
@@ -168,7 +175,7 @@ func (m Model) viewLiveMetrics() string {
 	for i, dp := range m.LiveMetrics.DataPoints {
 		memData[i] = float64(dp.UsedMemoryBytes) / 1024 / 1024
 	}
-	b.WriteString(metricsChartBorder.Render(renderLineChart("Memory (MB)", memData, chartWidth, 6, lipgloss.Color("35"))))
+	b.WriteString(metricsChartBorder.Render(renderLineChart("Memory (MB)", memData, chartWidth, chartHeight, lipgloss.Color("35"))))
 	b.WriteString("\n")
 
 	// Network chart
@@ -176,7 +183,7 @@ func (m Model) viewLiveMetrics() string {
 	for i, dp := range m.LiveMetrics.DataPoints {
 		netData[i] = dp.InputKbps + dp.OutputKbps
 	}
-	b.WriteString(metricsChartBorder.Render(renderLineChart("Network KB/s", netData, chartWidth, 5, lipgloss.Color("33"))))
+	b.WriteString(metricsChartBorder.Render(renderLineChart("Network KB/s", netData, chartWidth, chartHeight, lipgloss.Color("33"))))
 	b.WriteString("\n")
 
 	// Clients chart
@@ -184,7 +191,7 @@ func (m Model) viewLiveMetrics() string {
 	for i, dp := range m.LiveMetrics.DataPoints {
 		clientsData[i] = float64(dp.ConnectedClients)
 	}
-	b.WriteString(metricsChartBorder.Render(renderLineChart("Clients", clientsData, chartWidth, 5, lipgloss.Color("32"))))
+	b.WriteString(metricsChartBorder.Render(renderLineChart("Clients", clientsData, chartWidth, chartHeight, lipgloss.Color("32"))))
 	b.WriteString("\n")
 
 	// CPU chart
@@ -192,7 +199,7 @@ func (m Model) viewLiveMetrics() string {
 	for i, dp := range m.LiveMetrics.DataPoints {
 		cpuData[i] = dp.UsedCPUSys + dp.UsedCPUUser
 	}
-	b.WriteString(metricsChartBorder.Render(renderLineChart("CPU (seconds)", cpuData, chartWidth, 5, lipgloss.Color("208"))))
+	b.WriteString(metricsChartBorder.Render(renderLineChart("CPU (seconds)", cpuData, chartWidth, chartHeight, lipgloss.Color("208"))))
 	b.WriteString("\n\n")
 
 	b.WriteString(helpStyle.Render("Auto-refreshing (1s) | c:clear | q/esc:back"))
