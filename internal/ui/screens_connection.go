@@ -34,7 +34,6 @@ func (m Model) handleConnectionsScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if len(m.Connections) > 0 && m.SelectedConnIdx < len(m.Connections) {
 			conn := m.Connections[m.SelectedConnIdx]
 			m.EditingConnection = &conn
-			m.StatusMsg = "Test - edit conn" + conn.Password
 			m.populateConnInputs(conn)
 			m.Screen = types.ScreenEditConnection
 		}

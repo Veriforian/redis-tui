@@ -2,7 +2,6 @@ package db
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -144,6 +143,11 @@ func (c *Config) load() error {
 		}
 	}
 
+	loadErr := c.store.LoadVault()
+	if loadErr != nil {
+		return loadErr
+	}
+
 	// Hydrate with secure storage
 	for i, conn := range c.Connections {
 		if conn.ID == "" {
@@ -187,9 +191,9 @@ func (c *Config) save() error {
 
 		// Store creds in secure storage
 		if redisPassErr := c.store.Save(conn.ID+"-redis-password", conn.Password); redisPassErr != nil {
-			fmt.Println("Test - redisPassErr: %v", redisPassErr)
 			return redisPassErr
 		}
+
 		if redisUserErr := c.store.Save(conn.ID+"-redis-username", conn.Username); redisUserErr != nil {
 			return redisUserErr
 		}
@@ -291,7 +295,6 @@ func (c *Config) UpdateConnection(id string, name, host string, port int, passwo
 			c.Connections[i] = updatedConn
 
 			if err := c.save(); err != nil {
-				fmt.Println("Test - save err")
 				c.Connections[i] = conn // Rollback
 				return types.Connection{}, err
 			}

@@ -28,10 +28,6 @@ func main() {
 
 	// Minimal setup before starting UI
 	logWriter := types.NewLogWriter()
-	store, err := secstore.NewStore(filepath.Join(os.TempDir(), ".config", "redis-tui"), "")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// Start the UI immediately for perceived speed
 	m := ui.NewModel()
@@ -50,7 +46,7 @@ func main() {
 	slog.SetDefault(slog.New(handler))
 
 	// Load config synchronously for now to ensure it's available for connection operations
-	config, err := initConfig(store)
+	config, err := initConfig()
 	if err != nil {
 		log.Fatalf("Failed to initialize config: %v", err)
 	}
@@ -192,7 +188,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	return conn, false, false, *scanSizeFlag, *includeTypesFlag, nil
 }
 
-func initConfig(store *secstore.Store) (*db.Config, error) {
+func initConfig() (*db.Config, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = os.TempDir()
@@ -204,6 +200,11 @@ func initConfig(store *secstore.Store) (*db.Config, error) {
 	}
 
 	configPath := filepath.Join(configDir, "config.json")
+
+	store, err := secstore.NewStore(configDir, "")
+	if err != nil {
+		return nil, err
+	}
 
 	// Migrate from legacy config path (~/.redis/config.json) if new config doesn't exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
