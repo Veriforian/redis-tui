@@ -15,7 +15,7 @@ type ConfigService interface {
 	ListConnections() ([]types.Connection, error)
 	AddConnection(name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
 	UpdateConnection(id int64, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
-	DeleteConnection(id int64) error
+	DeleteConnection(id string) error
 
 	// Favorites management
 	AddFavorite(connID int64, key, label string) (types.Favorite, error)
@@ -165,4 +165,10 @@ type RedisService interface {
 
 	// Configuration
 	SetIncludeTypes(v bool)
+}
+
+// SecureStoreService defines the interface for secure storage operations.
+type SecureStoreService interface {
+	Save(connectionID string, password string) error
+	Load(connectionID string) (string, error)
 }

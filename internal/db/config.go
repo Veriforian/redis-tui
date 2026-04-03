@@ -2,13 +2,16 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/davidbudnick/redis-tui/internal/secstore"
 	"github.com/davidbudnick/redis-tui/internal/types"
+	"github.com/google/uuid"
 )
 
 // Config stores all application configuration
@@ -27,9 +30,10 @@ type Config struct {
 	nextID          int64
 	path            string
 	mu              sync.RWMutex
+	store           *secstore.Store
 }
 
-func NewConfig(configPath string) (*Config, error) {
+func NewConfig(configPath string, store *secstore.Store) (*Config, error) {
 	c := &Config{
 		path:            configPath,
 		Connections:     []types.Connection{},
@@ -43,6 +47,7 @@ func NewConfig(configPath string) (*Config, error) {
 		MaxValueHistory: 50,
 		WatchInterval:   1000,
 		nextID:          1,
+		store:           store,
 	}
 
 	// Ensure directory exists
@@ -56,14 +61,27 @@ func NewConfig(configPath string) (*Config, error) {
 		return nil, err
 	}
 
-	// Calculate next ID
-	for _, conn := range c.Connections {
-		if conn.ID >= c.nextID {
-			c.nextID = conn.ID + 1
+	return c, nil
+}
+
+// GenerateID generates a random ID
+func GenerateID() string {
+	return uuid.NewString()
+}
+
+// AttachIDsToConnections attaches IDs to connections
+func AttachIDsToConnections(connections []types.Connection) bool {
+	hasModifications := false
+
+	for i := range connections {
+		if connections[i].ID == "" {
+
+			connections[i].ID = GenerateID()
+			hasModifications = true
 		}
 	}
 
-	return c, nil
+	return hasModifications
 }
 
 func defaultTemplates() []types.KeyTemplate {
@@ -112,39 +130,84 @@ func (c *Config) load() error {
 		return err
 	}
 
-	return json.Unmarshal(data, c)
-}
+	if err := json.Unmarshal(data, c); err != nil {
+		return err
+	}
 
-func (c *Config) save() error {
-	// Create a copy of connections without passwords for JSON serialization
-	safeConnections := make([]types.Connection, len(c.Connections))
-	for i, conn := range c.Connections {
-		safeConnections[i] = conn
-		// safeConnections[i].Password = "" // Don't save password to JSON
-		if safeConnections[i].SSHConfig != nil {
-			sshCopy := *conn.SSHConfig
-			sshCopy.Password = ""
-			sshCopy.Passphrase = ""
-			safeConnections[i].SSHConfig = &sshCopy
+	// Attach IDs to connections
+	hasModifications := AttachIDsToConnections(c.Connections)
+
+	if hasModifications {
+		saveErr := c.save()
+		if saveErr != nil {
+			return saveErr
 		}
 	}
 
-	// Create a copy of config with safe connections
-	safeCfg := &Config{
-		Connections:     safeConnections,
-		Groups:          c.Groups,
-		Favorites:       c.Favorites,
-		RecentKeys:      c.RecentKeys,
-		Templates:       c.Templates,
-		KeyBindings:     c.KeyBindings,
-		TreeSeparator:   c.TreeSeparator,
-		ValueHistory:    c.ValueHistory,
-		MaxRecentKeys:   c.MaxRecentKeys,
-		MaxValueHistory: c.MaxValueHistory,
-		WatchInterval:   c.WatchInterval,
+	// Hydrate with secure storage
+	for i, conn := range c.Connections {
+		if conn.ID == "" {
+			continue
+		}
+
+		redisPass, redisPassError := c.store.Load(conn.ID + "-redis-password")
+		redisUsername, redisUsernameError := c.store.Load(conn.ID + "-redis-username")
+
+		if redisPassError == nil {
+			c.Connections[i].Password = redisPass
+		}
+		if redisUsernameError == nil {
+			c.Connections[i].Username = redisUsername
+		}
+		if conn.SSHConfig != nil {
+			sshPass, sshPassError := c.store.Load(conn.ID + "-ssh-password")
+			sshPassphrase, sshPassPhraseError := c.store.Load(conn.ID + "-ssh-passphrase")
+			sshUsername, sshUsernameError := c.store.Load(conn.ID + "-ssh-username")
+
+			if sshPassError == nil {
+				c.Connections[i].SSHConfig.Password = sshPass
+			}
+			if sshPassPhraseError == nil {
+				c.Connections[i].SSHConfig.Passphrase = sshPassphrase
+			}
+			if sshUsernameError == nil {
+				c.Connections[i].SSHConfig.User = sshUsername
+			}
+		}
 	}
 
-	data, err := json.MarshalIndent(safeCfg, "", "  ")
+	return nil
+}
+
+func (c *Config) save() error {
+	for _, conn := range c.Connections {
+		if conn.ID == "" {
+			conn.ID = GenerateID()
+		}
+
+		// Store creds in secure storage
+		if redisPassErr := c.store.Save(conn.ID+"-redis-password", conn.Password); redisPassErr != nil {
+			fmt.Println("Test - redisPassErr: %v", redisPassErr)
+			return redisPassErr
+		}
+		if redisUserErr := c.store.Save(conn.ID+"-redis-username", conn.Username); redisUserErr != nil {
+			return redisUserErr
+		}
+
+		if conn.SSHConfig != nil {
+			if sshPassErr := c.store.Save(conn.ID+"-ssh-password", conn.SSHConfig.Password); sshPassErr != nil {
+				return sshPassErr
+			}
+			if sshPassphraseErr := c.store.Save(conn.ID+"-ssh-passphrase", conn.SSHConfig.Passphrase); sshPassphraseErr != nil {
+				return sshPassphraseErr
+			}
+			if sshUserErr := c.store.Save(conn.ID+"-ssh-username", conn.SSHConfig.User); sshUserErr != nil {
+				return sshUserErr
+			}
+		}
+	}
+
+	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -176,7 +239,6 @@ func (c *Config) AddConnection(name, host string, port int, password string, use
 
 	now := time.Now()
 	conn := types.Connection{
-		ID:         c.nextID,
 		Name:       name,
 		Host:       host,
 		Port:       port,
@@ -200,7 +262,7 @@ func (c *Config) AddConnection(name, host string, port int, password string, use
 	return conn, nil
 }
 
-func (c *Config) UpdateConnection(id int64, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
+func (c *Config) UpdateConnection(id string, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -229,6 +291,7 @@ func (c *Config) UpdateConnection(id int64, name, host string, port int, passwor
 			c.Connections[i] = updatedConn
 
 			if err := c.save(); err != nil {
+				fmt.Println("Test - save err")
 				c.Connections[i] = conn // Rollback
 				return types.Connection{}, err
 			}
@@ -240,7 +303,7 @@ func (c *Config) UpdateConnection(id int64, name, host string, port int, passwor
 	return types.Connection{}, os.ErrNotExist
 }
 
-func (c *Config) DeleteConnection(id int64) error {
+func (c *Config) DeleteConnection(id string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -256,7 +319,7 @@ func (c *Config) DeleteConnection(id int64) error {
 
 // Favorites management
 
-func (c *Config) AddFavorite(connID int64, key, label string) (types.Favorite, error) {
+func (c *Config) AddFavorite(connID string, key, label string) (types.Favorite, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -284,7 +347,7 @@ func (c *Config) AddFavorite(connID int64, key, label string) (types.Favorite, e
 	return fav, nil
 }
 
-func (c *Config) RemoveFavorite(connID int64, key string) error {
+func (c *Config) RemoveFavorite(connID string, key string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -298,7 +361,7 @@ func (c *Config) RemoveFavorite(connID int64, key string) error {
 	return os.ErrNotExist
 }
 
-func (c *Config) ListFavorites(connID int64) []types.Favorite {
+func (c *Config) ListFavorites(connID string) []types.Favorite {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -316,7 +379,7 @@ func (c *Config) ListFavorites(connID int64) []types.Favorite {
 	return result
 }
 
-func (c *Config) IsFavorite(connID int64, key string) bool {
+func (c *Config) IsFavorite(connID string, key string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -330,7 +393,7 @@ func (c *Config) IsFavorite(connID int64, key string) bool {
 
 // Recent keys management
 
-func (c *Config) AddRecentKey(connID int64, key string, keyType types.KeyType) {
+func (c *Config) AddRecentKey(connID string, key string, keyType types.KeyType) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -359,7 +422,7 @@ func (c *Config) AddRecentKey(connID int64, key string, keyType types.KeyType) {
 	_ = c.save()
 }
 
-func (c *Config) ListRecentKeys(connID int64) []types.RecentKey {
+func (c *Config) ListRecentKeys(connID string) []types.RecentKey {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -372,7 +435,7 @@ func (c *Config) ListRecentKeys(connID int64) []types.RecentKey {
 	return result
 }
 
-func (c *Config) ClearRecentKeys(connID int64) {
+func (c *Config) ClearRecentKeys(connID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

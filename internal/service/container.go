@@ -3,15 +3,17 @@ package service
 // Container holds all service dependencies for the application.
 // This enables dependency injection and makes the code more testable.
 type Container struct {
-	Config ConfigService
-	Redis  RedisService
+	Config      ConfigService
+	Redis       RedisService
+	SecureStore SecureStoreService
 }
 
 // NewContainer creates a new service container with the provided services.
-func NewContainer(config ConfigService, redis RedisService) *Container {
+func NewContainer(config ConfigService, redis RedisService, store SecureStoreService) *Container {
 	return &Container{
-		Config: config,
-		Redis:  redis,
+		Config:      config,
+		Redis:       redis,
+		SecureStore: store,
 	}
 }
 

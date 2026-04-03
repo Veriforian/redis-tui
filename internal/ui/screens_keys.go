@@ -205,7 +205,7 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.BatchTTLInput.Focus()
 		m.Screen = types.ScreenBatchTTL
 	case "F":
-		connID := int64(0)
+		connID := string("")
 		if m.CurrentConn != nil {
 			connID = m.CurrentConn.ID
 		}
@@ -241,7 +241,7 @@ func (m Model) handleKeysScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "P":
 		return m, m.Cmds.LoadTemplates()
 	case "ctrl+h":
-		connID := int64(0)
+		connID := string("")
 		if m.CurrentConn != nil {
 			connID = m.CurrentConn.ID
 		}
@@ -382,7 +382,7 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case "f":
 		if m.CurrentKey != nil {
-			connID := int64(0)
+			connID := string("")
 			if m.CurrentConn != nil {
 				connID = m.CurrentConn.ID
 			}

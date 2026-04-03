@@ -3,6 +3,7 @@ package types
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -10,12 +11,12 @@ import (
 
 // Connection stores Redis connection details
 type Connection struct {
-	ID         int64      `json:"id"`
+	ID         string     `json:"id,omitempty"`
 	Name       string     `json:"name"`
 	Host       string     `json:"host"`
 	Port       int        `json:"port"`
-	Password   string     `json:"password,omitempty"` // #nosec G117 -- stored in local user config
-	Username   string     `json:"username,omitempty"` // #nosec G117 -- stored in local user config
+	Password   string     `json:"-"` // #nosec G117 -- stored in local user config. - ensures marshal never returns value
+	Username   string     `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 	DB         int        `json:"db"`
 	Group      string     `json:"group,omitempty"`
 	Color      string     `json:"color,omitempty"`
@@ -32,10 +33,10 @@ type Connection struct {
 type SSHConfig struct {
 	Host           string `json:"host"`
 	Port           int    `json:"port"`
-	User           string `json:"user"`
-	Password       string `json:"password,omitempty"` // #nosec G117 -- stored in local user config
+	User           string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	Password       string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 	PrivateKeyPath string `json:"private_key_path,omitempty"`
-	Passphrase     string `json:"passphrase,omitempty"`
+	Passphrase     string `json:"-"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
 }
 
 // TLSConfig stores TLS/SSL configuration
@@ -77,6 +78,34 @@ func (t *TLSConfig) BuildTLSConfig() (*tls.Config, error) {
 	return cfg, nil
 }
 
+// UnmarshalJSON implements json.Unmarshaler for Connection. It handles legacy IDs, which are stored as int
+func (c *Connection) UnmarshalJSON(data []byte) error {
+	type Alias Connection
+	aux := &struct {
+		ID any `json:"id,omitempty"`
+		*Alias
+	}{
+		Alias: (*Alias)(c),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	switch v := aux.ID.(type) {
+	case string:
+		c.ID = v
+	case float64:
+		c.ID = "" // Nuke legacy IDs, we rebuild them.
+	case nil:
+		c.ID = ""
+	default:
+		c.ID = ""
+	}
+
+	return nil
+}
+
 // ConnectionGroup organizes connections
 type ConnectionGroup struct {
 	Name        string  `json:"name"`
@@ -87,7 +116,7 @@ type ConnectionGroup struct {
 
 // Favorite stores a favorited key
 type Favorite struct {
-	ConnectionID int64     `json:"connection_id"`
+	ConnectionID string    `json:"connection_id"`
 	Connection   string    `json:"connection"` // Connection name for display
 	Key          string    `json:"key"`
 	Label        string    `json:"label,omitempty"`
@@ -96,7 +125,7 @@ type Favorite struct {
 
 // RecentKey tracks recently accessed keys
 type RecentKey struct {
-	ConnectionID int64     `json:"connection_id"`
+	ConnectionID string    `json:"connection_id"`
 	Key          string    `json:"key"`
 	Type         KeyType   `json:"type"`
 	AccessedAt   time.Time `json:"accessed_at"`

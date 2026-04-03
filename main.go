@@ -10,8 +10,7 @@ import (
 
 	"github.com/davidbudnick/redis-tui/internal/cmd"
 	"github.com/davidbudnick/redis-tui/internal/db"
-	"github.com/davidbudnick/redis-tui/internal/redis"
-	"github.com/davidbudnick/redis-tui/internal/service"
+	"github.com/davidbudnick/redis-tui/internal/secstore"
 	"github.com/davidbudnick/redis-tui/internal/types"
 	"github.com/davidbudnick/redis-tui/internal/ui"
 
@@ -29,6 +28,10 @@ func main() {
 
 	// Minimal setup before starting UI
 	logWriter := types.NewLogWriter()
+	store, err := secstore.NewStore(filepath.Join(os.TempDir(), ".config", "redis-tui"), "")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Start the UI immediately for perceived speed
 	m := ui.NewModel()
@@ -47,7 +50,7 @@ func main() {
 	slog.SetDefault(slog.New(handler))
 
 	// Load config synchronously for now to ensure it's available for connection operations
-	config, err := initConfig()
+	config, err := initConfig(store)
 	if err != nil {
 		log.Fatalf("Failed to initialize config: %v", err)
 	}
@@ -62,6 +65,7 @@ func main() {
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	*m.SendFunc = p.Send
+
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -188,7 +192,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	return conn, false, false, *scanSizeFlag, *includeTypesFlag, nil
 }
 
-func initConfig() (*db.Config, error) {
+func initConfig(store *secstore.Store) (*db.Config, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = os.TempDir()
@@ -216,5 +220,5 @@ func initConfig() (*db.Config, error) {
 		}
 	}
 
-	return db.NewConfig(configPath)
+	return db.NewConfig(configPath, store)
 }

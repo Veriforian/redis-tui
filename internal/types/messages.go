@@ -20,7 +20,7 @@ type ConnectionUpdatedMsg struct {
 }
 
 type ConnectionDeletedMsg struct {
-	ID  int64
+	ID  string
 	Err error
 }
 

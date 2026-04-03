@@ -24,6 +24,7 @@ import (
 type Commands struct {
 	config service.ConfigService
 	redis  service.RedisService
+	store  service.SecureStoreService
 }
 
 // NewCommands creates a new Commands instance with the provided services.
@@ -83,7 +84,7 @@ func (c *Commands) UpdateConnection(id int64, name, host string, port int, passw
 	}
 }
 
-func (c *Commands) DeleteConnection(id int64) tea.Cmd {
+func (c *Commands) DeleteConnection(id string) tea.Cmd {
 	return func() tea.Msg {
 		if c.config == nil {
 			return types.ConnectionDeletedMsg{Err: nil}
