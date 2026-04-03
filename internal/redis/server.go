@@ -18,9 +18,8 @@ func (c *Client) GetServerInfo() (types.ServerInfo, error) {
 	}
 
 	var serverInfo types.ServerInfo
-	lines := strings.Split(info, "\n")
 
-	for _, line := range lines {
+	for line := range strings.SplitSeq(info, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -78,7 +77,7 @@ func (c *Client) GetMemoryStats() (types.MemoryStats, error) {
 		return stats, err
 	}
 
-	for _, line := range strings.Split(info, "\n") {
+	for line := range strings.SplitSeq(info, "\n") {
 		parts := strings.SplitN(strings.TrimSpace(line), ":", 2)
 		if len(parts) != 2 {
 			continue
@@ -204,17 +203,15 @@ func (c *Client) ClientList() ([]types.ClientInfo, error) {
 	}
 
 	var clients []types.ClientInfo
-	lines := strings.Split(result, "\n")
 
-	for _, line := range lines {
+	for line := range strings.SplitSeq(result, "\n") {
 		if line == "" {
 			continue
 		}
 
 		client := types.ClientInfo{}
-		fields := strings.Fields(line)
 
-		for _, field := range fields {
+		for field := range strings.FieldsSeq(line) {
 			parts := strings.SplitN(field, "=", 2)
 			if len(parts) != 2 {
 				continue
@@ -270,9 +267,8 @@ func (c *Client) ClusterNodes() ([]types.ClusterNode, error) {
 
 func parseClusterNodes(result string) []types.ClusterNode {
 	var nodes []types.ClusterNode
-	lines := strings.Split(result, "\n")
 
-	for _, line := range lines {
+	for line := range strings.SplitSeq(result, "\n") {
 		if line == "" {
 			continue
 		}
@@ -329,8 +325,7 @@ func (c *Client) GetLiveMetrics() (types.LiveMetricsData, error) {
 		Timestamp: time.Now(),
 	}
 
-	lines := strings.Split(info, "\n")
-	for _, line := range lines {
+	for line := range strings.SplitSeq(info, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
