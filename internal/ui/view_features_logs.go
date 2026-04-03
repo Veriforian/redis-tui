@@ -104,7 +104,7 @@ func (m Model) viewLogDetail(logLine string) string {
 	b.WriteString(titleStyle.Render("Log Entry Details"))
 	b.WriteString("\n\n")
 
-	var data map[string]interface{}
+	var data map[string]any
 	if err := json.Unmarshal([]byte(logLine), &data); err != nil {
 		b.WriteString(normalStyle.Render(logLine))
 	} else {

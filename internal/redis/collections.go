@@ -4,7 +4,7 @@ import "github.com/redis/go-redis/v9"
 
 // RPush appends values to a list
 func (c *Client) RPush(key string, values ...string) error {
-	args := make([]interface{}, len(values))
+	args := make([]any, len(values))
 	for i, v := range values {
 		args[i] = v
 	}
@@ -13,7 +13,7 @@ func (c *Client) RPush(key string, values ...string) error {
 
 // SAdd adds members to a set
 func (c *Client) SAdd(key string, members ...string) error {
-	args := make([]interface{}, len(members))
+	args := make([]any, len(members))
 	for i, v := range members {
 		args[i] = v
 	}
@@ -31,7 +31,7 @@ func (c *Client) HSet(key, field, value string) error {
 }
 
 // XAdd adds an entry to a stream
-func (c *Client) XAdd(key string, fields map[string]interface{}) (string, error) {
+func (c *Client) XAdd(key string, fields map[string]any) (string, error) {
 	return c.cmdable().XAdd(c.ctx, &redis.XAddArgs{
 		Stream: key,
 		Values: fields,
@@ -50,7 +50,7 @@ func (c *Client) LRem(key string, count int64, value string) error {
 
 // SRem removes set members
 func (c *Client) SRem(key string, members ...string) error {
-	args := make([]interface{}, len(members))
+	args := make([]any, len(members))
 	for i, v := range members {
 		args[i] = v
 	}
@@ -59,7 +59,7 @@ func (c *Client) SRem(key string, members ...string) error {
 
 // ZRem removes sorted set members
 func (c *Client) ZRem(key string, members ...string) error {
-	args := make([]interface{}, len(members))
+	args := make([]any, len(members))
 	for i, v := range members {
 		args[i] = v
 	}
@@ -86,7 +86,7 @@ func (c *Client) HSetMap(key string, fields map[string]string) error {
 	if len(fields) == 0 {
 		return nil
 	}
-	args := make([]interface{}, 0, len(fields)*2)
+	args := make([]any, 0, len(fields)*2)
 	for k, v := range fields {
 		args = append(args, k, v)
 	}
@@ -95,7 +95,7 @@ func (c *Client) HSetMap(key string, fields map[string]string) error {
 
 // PFAdd adds elements to a HyperLogLog
 func (c *Client) PFAdd(key string, elements ...string) error {
-	args := make([]interface{}, len(elements))
+	args := make([]any, len(elements))
 	for i, v := range elements {
 		args[i] = v
 	}

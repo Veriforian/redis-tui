@@ -104,7 +104,7 @@ func TestHSet(t *testing.T) {
 func TestXAdd(t *testing.T) {
 	client, _ := setupTestClient(t)
 
-	id, err := client.XAdd("mystream", map[string]interface{}{
+	id, err := client.XAdd("mystream", map[string]any{
 		"key1": "val1",
 		"key2": "val2",
 	})
@@ -266,11 +266,11 @@ func TestHDel(t *testing.T) {
 func TestXDel(t *testing.T) {
 	client, _ := setupTestClient(t)
 
-	id1, err := client.XAdd("xd", map[string]interface{}{"k": "1"})
+	id1, err := client.XAdd("xd", map[string]any{"k": "1"})
 	if err != nil {
 		t.Fatalf("XAdd error: %v", err)
 	}
-	id2, err := client.XAdd("xd", map[string]interface{}{"k": "2"})
+	id2, err := client.XAdd("xd", map[string]any{"k": "2"})
 	if err != nil {
 		t.Fatalf("XAdd error: %v", err)
 	}

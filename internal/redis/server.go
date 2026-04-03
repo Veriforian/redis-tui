@@ -192,7 +192,7 @@ func (c *Client) SlowLogGet(count int64) ([]types.SlowLogEntry, error) {
 }
 
 // Eval executes a Lua script
-func (c *Client) Eval(script string, keys []string, args ...interface{}) (interface{}, error) {
+func (c *Client) Eval(script string, keys []string, args ...any) (any, error) {
 	return c.cmdable().Eval(c.ctx, script, keys, args...).Result()
 }
 

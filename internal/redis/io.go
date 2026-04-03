@@ -10,13 +10,13 @@ import (
 )
 
 // ExportKeys exports keys matching a pattern to a map
-func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
+func (c *Client) ExportKeys(pattern string) (map[string]any, error) {
 	allKeys, err := c.scanAll(pattern, 100)
 	if err != nil {
 		return nil, err
 	}
 
-	export := make(map[string]interface{})
+	export := make(map[string]any)
 	chunkSize := 100
 
 	for i := 0; i < len(allKeys); i += chunkSize {
@@ -53,11 +53,11 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 		pipe = c.pipeline()
 		type valueFetch struct {
 			meta keyMeta
-			cmd  interface{}
+			cmd  any
 		}
 		fetches := make([]valueFetch, 0, len(metas))
 		for _, m := range metas {
-			var cmd interface{}
+			var cmd any
 			switch m.keyType {
 			case "string":
 				cmd = pipe.Get(c.ctx, m.key)
@@ -82,7 +82,7 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 
 		// Collect results
 		for _, f := range fetches {
-			keyData := map[string]interface{}{
+			keyData := map[string]any{
 				"type": f.meta.keyType,
 				"ttl":  f.meta.ttl.Seconds(),
 			}
@@ -108,9 +108,9 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 				}
 			case "zset":
 				if cmd, ok := f.cmd.(*redis.ZSliceCmd); ok && cmd.Err() == nil {
-					members := make([]map[string]interface{}, len(cmd.Val()))
+					members := make([]map[string]any, len(cmd.Val()))
 					for k, z := range cmd.Val() {
-						members[k] = map[string]interface{}{"member": z.Member, "score": z.Score}
+						members[k] = map[string]any{"member": z.Member, "score": z.Score}
 					}
 					keyData["value"] = members
 				} else {
@@ -124,9 +124,9 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 				}
 			case "stream":
 				if cmd, ok := f.cmd.(*redis.XMessageSliceCmd); ok && cmd.Err() == nil {
-					entries := make([]map[string]interface{}, len(cmd.Val()))
+					entries := make([]map[string]any, len(cmd.Val()))
 					for k, e := range cmd.Val() {
-						entries[k] = map[string]interface{}{"id": e.ID, "fields": e.Values}
+						entries[k] = map[string]any{"id": e.ID, "fields": e.Values}
 					}
 					keyData["value"] = entries
 				} else {
@@ -153,11 +153,11 @@ func (c *Client) ExportKeys(pattern string) (map[string]interface{}, error) {
 }
 
 // ImportKeys imports keys from a map
-func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
+func (c *Client) ImportKeys(data map[string]any) (int, error) {
 	count := 0
 
 	for key, keyDataRaw := range data {
-		keyData, ok := keyDataRaw.(map[string]interface{})
+		keyData, ok := keyDataRaw.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -173,7 +173,7 @@ func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
 				count++
 			}
 		case "list":
-			if vals, ok := keyData["value"].([]interface{}); ok {
+			if vals, ok := keyData["value"].([]any); ok {
 				strs := make([]string, 0, len(vals))
 				for _, v := range vals {
 					if s, ok := v.(string); ok {
@@ -189,7 +189,7 @@ func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
 				count++
 			}
 		case "set":
-			if vals, ok := keyData["value"].([]interface{}); ok {
+			if vals, ok := keyData["value"].([]any); ok {
 				strs := make([]string, 0, len(vals))
 				for _, v := range vals {
 					if s, ok := v.(string); ok {
@@ -205,10 +205,10 @@ func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
 				count++
 			}
 		case "zset":
-			if vals, ok := keyData["value"].([]interface{}); ok {
+			if vals, ok := keyData["value"].([]any); ok {
 				members := make([]redis.Z, 0, len(vals))
 				for _, v := range vals {
-					if m, ok := v.(map[string]interface{}); ok {
+					if m, ok := v.(map[string]any); ok {
 						member, _ := m["member"].(string)
 						score, _ := m["score"].(float64)
 						members = append(members, redis.Z{Score: score, Member: member})
@@ -223,7 +223,7 @@ func (c *Client) ImportKeys(data map[string]interface{}) (int, error) {
 				count++
 			}
 		case "hash":
-			if vals, ok := keyData["value"].(map[string]interface{}); ok {
+			if vals, ok := keyData["value"].(map[string]any); ok {
 				fields := make(map[string]string, len(vals))
 				for field, val := range vals {
 					if s, ok := val.(string); ok {

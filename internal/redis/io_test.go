@@ -35,7 +35,7 @@ func TestExportKeys_AllTypes(t *testing.T) {
 	}
 
 	// -- string --
-	strData := result["str"].(map[string]interface{})
+	strData := result["str"].(map[string]any)
 	if strData["type"] != "string" {
 		t.Errorf("str type = %v, want string", strData["type"])
 	}
@@ -44,7 +44,7 @@ func TestExportKeys_AllTypes(t *testing.T) {
 	}
 
 	// -- list --
-	lstData := result["lst"].(map[string]interface{})
+	lstData := result["lst"].(map[string]any)
 	if lstData["type"] != "list" {
 		t.Errorf("lst type = %v, want list", lstData["type"])
 	}
@@ -57,7 +57,7 @@ func TestExportKeys_AllTypes(t *testing.T) {
 	}
 
 	// -- set --
-	stData := result["st"].(map[string]interface{})
+	stData := result["st"].(map[string]any)
 	if stData["type"] != "set" {
 		t.Errorf("st type = %v, want set", stData["type"])
 	}
@@ -71,13 +71,13 @@ func TestExportKeys_AllTypes(t *testing.T) {
 	}
 
 	// -- zset --
-	zsData := result["zs"].(map[string]interface{})
+	zsData := result["zs"].(map[string]any)
 	if zsData["type"] != "zset" {
 		t.Errorf("zs type = %v, want zset", zsData["type"])
 	}
-	zsVals, ok := zsData["value"].([]map[string]interface{})
+	zsVals, ok := zsData["value"].([]map[string]any)
 	if !ok {
-		t.Fatalf("zs value is not []map[string]interface{}, got %T", zsData["value"])
+		t.Fatalf("zs value is not []map[string]any, got %T", zsData["value"])
 	}
 	if len(zsVals) != 2 {
 		t.Fatalf("zs value length = %d, want 2", len(zsVals))
@@ -91,7 +91,7 @@ func TestExportKeys_AllTypes(t *testing.T) {
 	}
 
 	// -- hash --
-	hsData := result["hs"].(map[string]interface{})
+	hsData := result["hs"].(map[string]any)
 	if hsData["type"] != "hash" {
 		t.Errorf("hs type = %v, want hash", hsData["type"])
 	}
@@ -115,7 +115,7 @@ func TestExportKeys_WithTTL(t *testing.T) {
 		t.Fatalf("ExportKeys returned error: %v", err)
 	}
 
-	keyData, ok := result["ttlkey"].(map[string]interface{})
+	keyData, ok := result["ttlkey"].(map[string]any)
 	if !ok {
 		t.Fatalf("ttlkey not found or wrong type in export")
 	}
@@ -176,8 +176,8 @@ func TestExportKeys_Pattern(t *testing.T) {
 func TestImportKeys_String(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"mystr": map[string]interface{}{
+	data := map[string]any{
+		"mystr": map[string]any{
 			"type":  "string",
 			"value": "hello world",
 			"ttl":   float64(30),
@@ -209,10 +209,10 @@ func TestImportKeys_String(t *testing.T) {
 func TestImportKeys_List(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"mylist": map[string]interface{}{
+	data := map[string]any{
+		"mylist": map[string]any{
 			"type":  "list",
-			"value": []interface{}{"a", "b", "c"},
+			"value": []any{"a", "b", "c"},
 			"ttl":   float64(0),
 		},
 	}
@@ -237,10 +237,10 @@ func TestImportKeys_List(t *testing.T) {
 func TestImportKeys_Set(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"myset": map[string]interface{}{
+	data := map[string]any{
+		"myset": map[string]any{
 			"type":  "set",
-			"value": []interface{}{"x", "y", "z"},
+			"value": []any{"x", "y", "z"},
 			"ttl":   float64(0),
 		},
 	}
@@ -266,12 +266,12 @@ func TestImportKeys_Set(t *testing.T) {
 func TestImportKeys_ZSet(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"myzset": map[string]interface{}{
+	data := map[string]any{
+		"myzset": map[string]any{
 			"type": "zset",
-			"value": []interface{}{
-				map[string]interface{}{"member": "alpha", "score": float64(1.0)},
-				map[string]interface{}{"member": "beta", "score": float64(2.5)},
+			"value": []any{
+				map[string]any{"member": "alpha", "score": float64(1.0)},
+				map[string]any{"member": "beta", "score": float64(2.5)},
 			},
 			"ttl": float64(0),
 		},
@@ -305,10 +305,10 @@ func TestImportKeys_ZSet(t *testing.T) {
 func TestImportKeys_Hash(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"myhash": map[string]interface{}{
+	data := map[string]any{
+		"myhash": map[string]any{
 			"type": "hash",
-			"value": map[string]interface{}{
+			"value": map[string]any{
 				"field1": "val1",
 				"field2": "val2",
 			},
@@ -337,8 +337,8 @@ func TestImportKeys_Hash(t *testing.T) {
 func TestImportKeys_WithTTL(t *testing.T) {
 	client, mr := setupTestClient(t)
 
-	data := map[string]interface{}{
-		"ttlstr": map[string]interface{}{
+	data := map[string]any{
+		"ttlstr": map[string]any{
 			"type":  "string",
 			"value": "expiring",
 			"ttl":   float64(120),
@@ -361,26 +361,26 @@ func TestImportKeys_InvalidData(t *testing.T) {
 
 	tests := []struct {
 		name string
-		data map[string]interface{}
+		data map[string]any
 	}{
 		{
 			name: "value is not a map",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"bad": "not a map",
 			},
 		},
 		{
 			name: "missing type field",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"value": "hello",
 				},
 			},
 		},
 		{
 			name: "wrong value type for string",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "string",
 					"value": 12345, // not a string
 				},
@@ -388,8 +388,8 @@ func TestImportKeys_InvalidData(t *testing.T) {
 		},
 		{
 			name: "wrong value type for list",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "list",
 					"value": "not a slice",
 				},
@@ -397,8 +397,8 @@ func TestImportKeys_InvalidData(t *testing.T) {
 		},
 		{
 			name: "wrong value type for set",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "set",
 					"value": 42,
 				},
@@ -406,8 +406,8 @@ func TestImportKeys_InvalidData(t *testing.T) {
 		},
 		{
 			name: "wrong value type for zset",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "zset",
 					"value": "not a slice",
 				},
@@ -415,17 +415,17 @@ func TestImportKeys_InvalidData(t *testing.T) {
 		},
 		{
 			name: "wrong value type for hash",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "hash",
-					"value": []interface{}{"not", "a", "map"},
+					"value": []any{"not", "a", "map"},
 				},
 			},
 		},
 		{
 			name: "unknown type",
-			data: map[string]interface{}{
-				"bad": map[string]interface{}{
+			data: map[string]any{
+				"bad": map[string]any{
 					"type":  "unknown",
 					"value": "whatever",
 				},
@@ -433,7 +433,7 @@ func TestImportKeys_InvalidData(t *testing.T) {
 		},
 		{
 			name: "empty data",
-			data: map[string]interface{}{},
+			data: map[string]any{},
 		},
 	}
 
@@ -480,11 +480,11 @@ func TestExportImportRoundTrip(t *testing.T) {
 
 	// Convert exported data to the format ImportKeys expects.
 	// ExportKeys returns typed Go values ([]string, map[string]string, etc.)
-	// but ImportKeys expects JSON-like interface{} types ([]interface{}, map[string]interface{}).
-	importData := make(map[string]interface{})
+	// but ImportKeys expects JSON-like any types ([]any, map[string]any).
+	importData := make(map[string]any)
 	for key, raw := range exported {
-		keyData := raw.(map[string]interface{})
-		entry := map[string]interface{}{
+		keyData := raw.(map[string]any)
+		entry := map[string]any{
 			"type": keyData["type"],
 			"ttl":  keyData["ttl"],
 		}
@@ -494,28 +494,28 @@ func TestExportImportRoundTrip(t *testing.T) {
 			entry["value"] = keyData["value"]
 		case "list":
 			vals := keyData["value"].([]string)
-			iface := make([]interface{}, len(vals))
+			iface := make([]any, len(vals))
 			for i, v := range vals {
 				iface[i] = v
 			}
 			entry["value"] = iface
 		case "set":
 			vals := keyData["value"].([]string)
-			iface := make([]interface{}, len(vals))
+			iface := make([]any, len(vals))
 			for i, v := range vals {
 				iface[i] = v
 			}
 			entry["value"] = iface
 		case "zset":
-			vals := keyData["value"].([]map[string]interface{})
-			iface := make([]interface{}, len(vals))
+			vals := keyData["value"].([]map[string]any)
+			iface := make([]any, len(vals))
 			for i, v := range vals {
 				iface[i] = v
 			}
 			entry["value"] = iface
 		case "hash":
 			vals := keyData["value"].(map[string]string)
-			iface := make(map[string]interface{}, len(vals))
+			iface := make(map[string]any, len(vals))
 			for k, v := range vals {
 				iface[k] = v
 			}

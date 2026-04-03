@@ -111,7 +111,7 @@ type RedisService interface {
 	HDel(key string, fields ...string) error
 
 	// Stream operations
-	XAdd(key string, fields map[string]interface{}) (string, error)
+	XAdd(key string, fields map[string]any) (string, error)
 	XDel(key string, ids ...string) error
 
 	// HyperLogLog operations
@@ -148,7 +148,7 @@ type RedisService interface {
 	ClusterInfo() (string, error)
 
 	// Scripting
-	Eval(script string, keys []string, args ...interface{}) (interface{}, error)
+	Eval(script string, keys []string, args ...any) (any, error)
 
 	// Pub/Sub
 	Publish(channel, message string) (int64, error)
@@ -160,8 +160,8 @@ type RedisService interface {
 	UnsubscribeKeyspace() error
 
 	// Import/Export
-	ExportKeys(pattern string) (map[string]interface{}, error)
-	ImportKeys(data map[string]interface{}) (int, error)
+	ExportKeys(pattern string) (map[string]any, error)
+	ImportKeys(data map[string]any) (int, error)
 
 	// Configuration
 	SetIncludeTypes(v bool)

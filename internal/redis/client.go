@@ -11,7 +11,7 @@ import (
 // silentLogger discards all log output from the Redis client
 type silentLogger struct{}
 
-func (l *silentLogger) Printf(ctx context.Context, format string, v ...interface{}) {}
+func (l *silentLogger) Printf(ctx context.Context, format string, v ...any) {}
 
 func init() {
 	// Disable go-redis internal logging to prevent noisy connection pool messages
@@ -47,7 +47,7 @@ func (c *Client) cmdable() redis.Cmdable {
 	return c.client
 }
 
-func (c *Client) do(args ...interface{}) *redis.Cmd {
+func (c *Client) do(args ...any) *redis.Cmd {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if c.isCluster {

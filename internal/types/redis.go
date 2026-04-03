@@ -59,7 +59,7 @@ type ZSetMember struct {
 // StreamEntry represents a stream entry
 type StreamEntry struct {
 	ID     string
-	Fields map[string]interface{}
+	Fields map[string]any
 }
 
 // ServerInfo holds Redis server information

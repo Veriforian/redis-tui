@@ -167,17 +167,17 @@ func seedSortedSets(ctx context.Context, rdb redis.Cmdable) {
 func seedHashes(ctx context.Context, rdb redis.Cmdable) {
 	users := []struct {
 		key    string
-		fields map[string]interface{}
+		fields map[string]any
 	}{
-		{"user:1001", map[string]interface{}{"name": "Alice Johnson", "email": "alice@example.com", "role": "admin", "created": "2024-01-15", "logins": "142"}},
-		{"user:1002", map[string]interface{}{"name": "Bob Smith", "email": "bob@example.com", "role": "editor", "created": "2024-03-22", "logins": "87"}},
-		{"user:1003", map[string]interface{}{"name": "Carol Williams", "email": "carol@example.com", "role": "viewer", "created": "2024-06-10", "logins": "23"}},
+		{"user:1001", map[string]any{"name": "Alice Johnson", "email": "alice@example.com", "role": "admin", "created": "2024-01-15", "logins": "142"}},
+		{"user:1002", map[string]any{"name": "Bob Smith", "email": "bob@example.com", "role": "editor", "created": "2024-03-22", "logins": "87"}},
+		{"user:1003", map[string]any{"name": "Carol Williams", "email": "carol@example.com", "role": "viewer", "created": "2024-06-10", "logins": "23"}},
 	}
 	for _, u := range users {
 		must(rdb.HSet(ctx, u.key, u.fields))
 	}
 
-	must(rdb.HSet(ctx, "config:app", map[string]interface{}{
+	must(rdb.HSet(ctx, "config:app", map[string]any{
 		"max_connections": "100",
 		"timeout_ms":      "5000",
 		"retry_count":     "3",
@@ -185,7 +185,7 @@ func seedHashes(ctx context.Context, rdb redis.Cmdable) {
 		"cache_ttl":       "3600",
 	}))
 
-	must(rdb.HSet(ctx, "session:abc123", map[string]interface{}{
+	must(rdb.HSet(ctx, "session:abc123", map[string]any{
 		"user_id":    "1001",
 		"ip":         "192.168.1.42",
 		"user_agent": "Mozilla/5.0",
@@ -195,7 +195,7 @@ func seedHashes(ctx context.Context, rdb redis.Cmdable) {
 }
 
 func seedStreams(ctx context.Context, rdb redis.Cmdable) {
-	events := []map[string]interface{}{
+	events := []map[string]any{
 		{"action": "login", "user": "alice", "ip": "10.0.0.1"},
 		{"action": "page_view", "user": "alice", "path": "/dashboard"},
 		{"action": "login", "user": "bob", "ip": "10.0.0.2"},
@@ -210,13 +210,13 @@ func seedStreams(ctx context.Context, rdb redis.Cmdable) {
 }
 
 func seedHyperLogLog(ctx context.Context, rdb redis.Cmdable) {
-	visitors := make([]interface{}, 20)
+	visitors := make([]any, 20)
 	for i := range visitors {
 		visitors[i] = fmt.Sprintf("user:%d", 1000+i)
 	}
 	must(rdb.PFAdd(ctx, "hll:unique-visitors", visitors...))
 
-	pages := make([]interface{}, 15)
+	pages := make([]any, 15)
 	for i := range pages {
 		pages[i] = fmt.Sprintf("/page/%d", i+1)
 	}

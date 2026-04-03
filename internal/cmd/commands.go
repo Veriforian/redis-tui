@@ -239,7 +239,7 @@ func (c *Commands) CreateKey(key string, keyType types.KeyType, value string, ex
 			if field == "" {
 				field = "data"
 			}
-			fields := map[string]interface{}{field: value}
+			fields := map[string]any{field: value}
 			_, err = c.redis.XAdd(key, fields)
 		case types.KeyTypeJSON:
 			err = c.redis.JSONSet(key, value)
@@ -332,7 +332,7 @@ func (c *Commands) AddToHash(key, field, value string) tea.Cmd {
 	}
 }
 
-func (c *Commands) AddToStream(key string, fields map[string]interface{}) tea.Cmd {
+func (c *Commands) AddToStream(key string, fields map[string]any) tea.Cmd {
 	return func() tea.Msg {
 		if c.redis == nil {
 			return types.ItemAddedToCollectionMsg{Key: key, Err: nil}
@@ -563,7 +563,7 @@ func (c *Commands) BatchSetTTL(pattern string, ttl time.Duration) tea.Cmd {
 
 // Script commands
 
-func (c *Commands) EvalLuaScript(script string, keys []string, args ...interface{}) tea.Cmd {
+func (c *Commands) EvalLuaScript(script string, keys []string, args ...any) tea.Cmd {
 	return func() tea.Msg {
 		if c.redis == nil {
 			return types.LuaScriptResultMsg{Err: nil}
@@ -636,7 +636,7 @@ func (c *Commands) ImportKeys(filename string) tea.Cmd {
 			return types.ImportCompleteMsg{Filename: filename, Err: err}
 		}
 
-		var data map[string]interface{}
+		var data map[string]any
 		if err := json.Unmarshal(jsonData, &data); err != nil {
 			return types.ImportCompleteMsg{Filename: filename, Err: err}
 		}

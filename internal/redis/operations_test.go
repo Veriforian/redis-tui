@@ -25,7 +25,7 @@ func TestGetValue(t *testing.T) {
 
 	// Streams are not natively supported by miniredis helpers,
 	// so we use the client wrapper.
-	streamID, err := client.XAdd("stream", map[string]interface{}{"field": "value"})
+	streamID, err := client.XAdd("stream", map[string]any{"field": "value"})
 	if err != nil {
 		t.Fatalf("XAdd failed: %v", err)
 	}

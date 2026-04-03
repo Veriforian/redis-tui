@@ -154,7 +154,7 @@ func (m Model) handleLuaScriptResultMsg(msg types.LuaScriptResultMsg) (tea.Model
 			m.LuaResult = v
 		case int64:
 			m.LuaResult = strconv.FormatInt(v, 10)
-		case []interface{}:
+		case []any:
 			m.LuaResult = "Array result (length: " + strconv.Itoa(len(v)) + ")"
 		default:
 			m.LuaResult = "OK"

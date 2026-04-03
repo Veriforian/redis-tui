@@ -23,11 +23,11 @@ type FullMockRedisClient struct {
 	ClientListResult      []types.ClientInfo
 	ClusterNodesResult    []types.ClusterNode
 	ClusterInfoResult     string
-	EvalResult            interface{}
+	EvalResult            any
 	PublishResult         int64
 	PubSubChannelsResult  []string
 	ConfigGetResult       map[string]string
-	ExportResult          map[string]interface{}
+	ExportResult          map[string]any
 	ImportResult          int
 	BulkDeleteResult      int
 	BatchTTLResult        int
@@ -264,7 +264,7 @@ func (m *FullMockRedisClient) HDel(_ string, _ ...string) error {
 
 // Stream operations
 
-func (m *FullMockRedisClient) XAdd(_ string, _ map[string]interface{}) (string, error) {
+func (m *FullMockRedisClient) XAdd(_ string, _ map[string]any) (string, error) {
 	m.Calls = append(m.Calls, "XAdd")
 	return m.XAddResult, m.XAddError
 }
@@ -327,7 +327,7 @@ func (m *FullMockRedisClient) ClusterInfo() (string, error) {
 
 // Scripting
 
-func (m *FullMockRedisClient) Eval(_ string, _ []string, _ ...interface{}) (interface{}, error) {
+func (m *FullMockRedisClient) Eval(_ string, _ []string, _ ...any) (any, error) {
 	m.Calls = append(m.Calls, "Eval")
 	return m.EvalResult, m.EvalError
 }
@@ -375,12 +375,12 @@ func (m *FullMockRedisClient) UnsubscribeKeyspace() error {
 
 // Import/Export
 
-func (m *FullMockRedisClient) ExportKeys(_ string) (map[string]interface{}, error) {
+func (m *FullMockRedisClient) ExportKeys(_ string) (map[string]any, error) {
 	m.Calls = append(m.Calls, "ExportKeys")
 	return m.ExportResult, m.ExportError
 }
 
-func (m *FullMockRedisClient) ImportKeys(_ map[string]interface{}) (int, error) {
+func (m *FullMockRedisClient) ImportKeys(_ map[string]any) (int, error) {
 	m.Calls = append(m.Calls, "ImportKeys")
 	return m.ImportResult, m.ImportError
 }

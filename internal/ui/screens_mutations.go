@@ -211,7 +211,7 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 				}
 				return m, m.Cmds.AddToHash(m.CurrentKey.Key, value, extra)
 			case types.KeyTypeStream:
-				fields := map[string]interface{}{value: extra}
+				fields := map[string]any{value: extra}
 				return m, m.Cmds.AddToStream(m.CurrentKey.Key, fields)
 			case types.KeyTypeHyperLogLog:
 				return m, m.Cmds.AddToHLL(m.CurrentKey.Key, value)

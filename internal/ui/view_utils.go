@@ -367,7 +367,7 @@ type logEntry struct {
 func parseLogEntry(logLine string) logEntry {
 	entry := logEntry{}
 
-	var data map[string]interface{}
+	var data map[string]any
 	if err := json.Unmarshal([]byte(logLine), &data); err != nil {
 		entry.Msg = logLine
 		return entry

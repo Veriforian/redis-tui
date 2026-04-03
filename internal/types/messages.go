@@ -111,7 +111,7 @@ type SlowLogLoadedMsg struct {
 }
 
 type LuaScriptResultMsg struct {
-	Result interface{}
+	Result any
 	Err    error
 }
 
@@ -250,7 +250,7 @@ type ClipboardCopiedMsg struct {
 }
 
 type JSONPathResultMsg struct {
-	Result interface{}
+	Result any
 	Err    error
 }
 

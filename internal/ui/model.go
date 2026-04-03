@@ -43,7 +43,7 @@ type Model struct {
 	StatusMsg         string
 	Loading           bool
 	ConfirmType       string
-	ConfirmData       interface{}
+	ConfirmData       any
 	Logs              *types.LogWriter
 	SendFunc          *func(tea.Msg)
 	PendingSelectKey  string

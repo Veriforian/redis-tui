@@ -606,7 +606,7 @@ func TestAddToHash(t *testing.T) {
 
 func TestAddToStream(t *testing.T) {
 	cmds, _ := newMockCmds()
-	msg := cmds.AddToStream("stream", map[string]interface{}{"key": "val"})()
+	msg := cmds.AddToStream("stream", map[string]any{"key": "val"})()
 	result := msg.(types.ItemAddedToCollectionMsg)
 	if result.Err != nil {
 		t.Errorf("unexpected error: %v", result.Err)
@@ -1335,69 +1335,69 @@ func TestCollectionErrors(t *testing.T) {
 	tests := []struct {
 		name    string
 		setup   func(*testutil.FullMockRedisClient)
-		execute func(*Commands) interface{}
+		execute func(*Commands) any
 		wantErr bool
 	}{
 		{
 			"AddToList error",
 			func(m *testutil.FullMockRedisClient) { m.RPushError = errors.New("err") },
-			func(c *Commands) interface{} { return c.AddToList("k", "v")() },
+			func(c *Commands) any { return c.AddToList("k", "v")() },
 			true,
 		},
 		{
 			"AddToSet error",
 			func(m *testutil.FullMockRedisClient) { m.SAddError = errors.New("err") },
-			func(c *Commands) interface{} { return c.AddToSet("k", "v")() },
+			func(c *Commands) any { return c.AddToSet("k", "v")() },
 			true,
 		},
 		{
 			"AddToZSet error",
 			func(m *testutil.FullMockRedisClient) { m.ZAddError = errors.New("err") },
-			func(c *Commands) interface{} { return c.AddToZSet("k", 1.0, "v")() },
+			func(c *Commands) any { return c.AddToZSet("k", 1.0, "v")() },
 			true,
 		},
 		{
 			"AddToHash error",
 			func(m *testutil.FullMockRedisClient) { m.HSetError = errors.New("err") },
-			func(c *Commands) interface{} { return c.AddToHash("k", "f", "v")() },
+			func(c *Commands) any { return c.AddToHash("k", "f", "v")() },
 			true,
 		},
 		{
 			"AddToStream error",
 			func(m *testutil.FullMockRedisClient) { m.XAddError = errors.New("err") },
-			func(c *Commands) interface{} {
-				return c.AddToStream("k", map[string]interface{}{"f": "v"})()
+			func(c *Commands) any {
+				return c.AddToStream("k", map[string]any{"f": "v"})()
 			},
 			true,
 		},
 		{
 			"RemoveFromList error",
 			func(m *testutil.FullMockRedisClient) { m.LRemError = errors.New("err") },
-			func(c *Commands) interface{} { return c.RemoveFromList("k", "v")() },
+			func(c *Commands) any { return c.RemoveFromList("k", "v")() },
 			true,
 		},
 		{
 			"RemoveFromSet error",
 			func(m *testutil.FullMockRedisClient) { m.SRemError = errors.New("err") },
-			func(c *Commands) interface{} { return c.RemoveFromSet("k", "v")() },
+			func(c *Commands) any { return c.RemoveFromSet("k", "v")() },
 			true,
 		},
 		{
 			"RemoveFromZSet error",
 			func(m *testutil.FullMockRedisClient) { m.ZRemError = errors.New("err") },
-			func(c *Commands) interface{} { return c.RemoveFromZSet("k", "v")() },
+			func(c *Commands) any { return c.RemoveFromZSet("k", "v")() },
 			true,
 		},
 		{
 			"RemoveFromHash error",
 			func(m *testutil.FullMockRedisClient) { m.HDelError = errors.New("err") },
-			func(c *Commands) interface{} { return c.RemoveFromHash("k", "f")() },
+			func(c *Commands) any { return c.RemoveFromHash("k", "f")() },
 			true,
 		},
 		{
 			"RemoveFromStream error",
 			func(m *testutil.FullMockRedisClient) { m.XDelError = errors.New("err") },
-			func(c *Commands) interface{} { return c.RemoveFromStream("k", "1-0")() },
+			func(c *Commands) any { return c.RemoveFromStream("k", "1-0")() },
 			true,
 		},
 	}
