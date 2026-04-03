@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -17,6 +18,8 @@ import (
 )
 
 var githubAPIBase = "https://api.github.com"
+
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 const githubRepo = "davidbudnick/redis-tui"
 
@@ -119,7 +122,7 @@ func fetchLatestVersion() (string, error) {
 		return "", fmt.Errorf("could not create request: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req) // #nosec G704 - URL built from hardcoded GitHub API base
+	resp, err := httpClient.Do(req) // #nosec G704 - URL built from hardcoded GitHub API base
 	if err != nil {
 		return "", fmt.Errorf("HTTP request failed: %w", err)
 	}
@@ -162,7 +165,7 @@ func downloadFile(rawURL, destPath string) error {
 		return fmt.Errorf("could not create request: %w", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req) // #nosec G704 - URL built from hardcoded GitHub release base
+	resp, err := httpClient.Do(req) // #nosec G704 - URL built from hardcoded GitHub release base
 	if err != nil {
 		return fmt.Errorf("HTTP request failed: %w", err)
 	}
