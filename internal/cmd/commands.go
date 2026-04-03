@@ -219,7 +219,11 @@ func (c *Commands) CreateKey(key string, keyType types.KeyType, value string, ex
 		case types.KeyTypeZSet:
 			score := 0.0
 			if extra != "" {
-				score, _ = strconv.ParseFloat(extra, 64)
+				var parseErr error
+				score, parseErr = strconv.ParseFloat(extra, 64)
+				if parseErr != nil {
+					return types.KeySetMsg{Key: key, Err: fmt.Errorf("invalid score %q: %w", extra, parseErr)}
+				}
 			}
 			err = c.redis.ZAdd(key, score, value)
 		case types.KeyTypeHash:

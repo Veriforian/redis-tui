@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -89,7 +90,11 @@ func CreateKeyCmd(key string, keyType types.KeyType, value string, extra string,
 		case types.KeyTypeZSet:
 			score := 0.0
 			if extra != "" {
-				score, _ = strconv.ParseFloat(extra, 64)
+				var parseErr error
+				score, parseErr = strconv.ParseFloat(extra, 64)
+				if parseErr != nil {
+					return types.KeySetMsg{Key: key, Err: fmt.Errorf("invalid score %q: %w", extra, parseErr)}
+				}
 			}
 			err = rc.ZAdd(key, score, value)
 		case types.KeyTypeHash:
@@ -112,7 +117,11 @@ func CreateKeyCmd(key string, keyType types.KeyType, value string, extra string,
 		case types.KeyTypeBitmap:
 			offset := int64(0)
 			if value != "" {
-				offset, _ = strconv.ParseInt(value, 10, 64)
+				var parseErr error
+				offset, parseErr = strconv.ParseInt(value, 10, 64)
+				if parseErr != nil {
+					return types.KeySetMsg{Key: key, Err: fmt.Errorf("invalid offset %q: %w", value, parseErr)}
+				}
 			}
 			err = rc.SetBit(key, offset, 1)
 		case types.KeyTypeGeo:
@@ -120,8 +129,15 @@ func CreateKeyCmd(key string, keyType types.KeyType, value string, extra string,
 			if extra != "" {
 				parts := strings.SplitN(extra, ",", 2)
 				if len(parts) == 2 {
-					lon, _ = strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-					lat, _ = strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+					var parseErr error
+					lon, parseErr = strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+					if parseErr != nil {
+						return types.KeySetMsg{Key: key, Err: fmt.Errorf("invalid longitude %q: %w", strings.TrimSpace(parts[0]), parseErr)}
+					}
+					lat, parseErr = strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+					if parseErr != nil {
+						return types.KeySetMsg{Key: key, Err: fmt.Errorf("invalid latitude %q: %w", strings.TrimSpace(parts[1]), parseErr)}
+					}
 				}
 			}
 			err = rc.GeoAdd(key, &redis.GeoLocation{Name: value, Longitude: lon, Latitude: lat})

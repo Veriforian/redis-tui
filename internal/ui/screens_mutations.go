@@ -124,7 +124,11 @@ func (m Model) handleTTLEditorScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "enter":
 		if m.CurrentKey != nil {
-			ttlSecs, _ := strconv.Atoi(m.TTLInput.Value())
+			ttlSecs, err := strconv.Atoi(m.TTLInput.Value())
+			if err != nil {
+				m.StatusMsg = "Invalid TTL: must be an integer (seconds)"
+				return m, nil
+			}
 			ttl := time.Duration(ttlSecs) * time.Second
 			m.Loading = true
 			return m, cmd.SetTTLCmd(m.CurrentKey.Key, ttl)
@@ -193,7 +197,13 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			case types.KeyTypeZSet:
 				score := 0.0
 				if extra != "" {
-					score, _ = strconv.ParseFloat(extra, 64)
+					var parseErr error
+					score, parseErr = strconv.ParseFloat(extra, 64)
+					if parseErr != nil {
+						m.StatusMsg = "Invalid score: must be a number"
+						m.Loading = false
+						return m, nil
+					}
 				}
 				return m, cmd.AddToZSetCmd(m.CurrentKey.Key, score, value)
 			case types.KeyTypeHash:
@@ -209,7 +219,13 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			case types.KeyTypeBitmap:
 				offset := int64(0)
 				if value != "" {
-					offset, _ = strconv.ParseInt(value, 10, 64)
+					var parseErr error
+					offset, parseErr = strconv.ParseInt(value, 10, 64)
+					if parseErr != nil {
+						m.StatusMsg = "Invalid offset: must be an integer"
+						m.Loading = false
+						return m, nil
+					}
 				}
 				return m, cmd.SetBitCmd(m.CurrentKey.Key, offset, 1)
 			case types.KeyTypeGeo:
@@ -217,8 +233,19 @@ func (m Model) handleAddToCollectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 				if extra != "" {
 					parts := strings.SplitN(extra, ",", 2)
 					if len(parts) == 2 {
-						lon, _ = strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
-						lat, _ = strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+						var parseErr error
+						lon, parseErr = strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+						if parseErr != nil {
+							m.StatusMsg = "Invalid longitude: must be a number"
+							m.Loading = false
+							return m, nil
+						}
+						lat, parseErr = strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+						if parseErr != nil {
+							m.StatusMsg = "Invalid latitude: must be a number"
+							m.Loading = false
+							return m, nil
+						}
 					}
 				}
 				return m, cmd.AddToGeoCmd(m.CurrentKey.Key, lon, lat, value)
