@@ -6,10 +6,12 @@ import (
 	"sync"
 )
 
-// LogWriter implements io.Writer for capturing logs
+// LogWriter implements io.Writer for capturing logs using a ring buffer.
 type LogWriter struct {
-	mu   sync.Mutex
-	logs []string
+	mu    sync.Mutex
+	buf   [MaxLogs]string
+	head  int // index of oldest entry
+	count int // number of entries stored
 }
 
 // MaxLogs is the maximum number of log entries to keep
@@ -27,30 +29,35 @@ func (w *LogWriter) Write(p []byte) (n int, err error) {
 		return len(p), nil
 	}
 	w.mu.Lock()
-	w.logs = append(w.logs, logStr)
-	if len(w.logs) > MaxLogs {
-		newLogs := make([]string, MaxLogs)
-		copy(newLogs, w.logs[len(w.logs)-MaxLogs:])
-		w.logs = newLogs
+	idx := (w.head + w.count) % MaxLogs
+	if w.count == MaxLogs {
+		// Buffer full — overwrite oldest entry and advance head
+		w.buf[w.head] = logStr
+		w.head = (w.head + 1) % MaxLogs
+	} else {
+		w.buf[idx] = logStr
+		w.count++
 	}
 	w.mu.Unlock()
 	return len(p), nil
 }
 
-// GetLogs returns a snapshot copy of all log entries
+// GetLogs returns a snapshot copy of all log entries in chronological order
 func (w *LogWriter) GetLogs() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	cp := make([]string, len(w.logs))
-	copy(cp, w.logs)
-	return cp
+	result := make([]string, w.count)
+	for i := 0; i < w.count; i++ {
+		result[i] = w.buf[(w.head+i)%MaxLogs]
+	}
+	return result
 }
 
 // Len returns the number of log entries
 func (w *LogWriter) Len() int {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	return len(w.logs)
+	return w.count
 }
 
 var _ io.Writer = &LogWriter{}
