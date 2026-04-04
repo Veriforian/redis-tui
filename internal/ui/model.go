@@ -339,6 +339,18 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model) *types.Connection {
+	conn := &types.Connection{}
+	conn.Name = inputs[0].Value()
+	conn.Host = inputs[1].Value()
+	conn.Port = m.getPort()
+	conn.Password = inputs[3].Value()
+	conn.Username = inputs[4].Value()
+	conn.DB = m.getDB()
+	conn.UseCluster = inputs[5].Value() == "1"
+	return conn
+}
+
 func (m Model) getPort() int {
 	port, err := strconv.Atoi(m.ConnInputs[2].Value())
 	if err != nil {

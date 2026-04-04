@@ -15,8 +15,8 @@ type Connection struct {
 	Name       string     `json:"name"`
 	Host       string     `json:"host"`
 	Port       int        `json:"port"`
-	Password   string     `json:"-" sensitive:"true" prefix:"redis"` // #nosec G117 -- stored in local user config. - ensures marshal never returns value
 	Username   string     `json:"-" sensitive:"true" prefix:"redis"` // #nosec G117 -- stored in local user config - ensures marshal never returns value
+	Password   string     `json:"-" sensitive:"true" prefix:"redis"` // #nosec G117 -- stored in local user config. - ensures marshal never returns value
 	DB         int        `json:"db"`
 	Group      string     `json:"group,omitempty"`
 	Color      string     `json:"color,omitempty"`

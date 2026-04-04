@@ -2,7 +2,6 @@
 package service
 
 import (
-	"crypto/tls"
 	"time"
 
 	"github.com/davidbudnick/redis-tui/internal/types"
@@ -13,20 +12,20 @@ import (
 type ConfigService interface {
 	// Connection management
 	ListConnections() ([]types.Connection, error)
-	AddConnection(name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
-	UpdateConnection(id int64, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error)
+	AddConnection(conn *types.Connection) (types.Connection, error)
+	UpdateConnection(conn *types.Connection) (types.Connection, error)
 	DeleteConnection(id string) error
 
 	// Favorites management
-	AddFavorite(connID int64, key, label string) (types.Favorite, error)
-	RemoveFavorite(connID int64, key string) error
-	ListFavorites(connID int64) []types.Favorite
-	IsFavorite(connID int64, key string) bool
+	AddFavorite(connID string, key, label string) (types.Favorite, error)
+	RemoveFavorite(connID string, key string) error
+	ListFavorites(connID string) []types.Favorite
+	IsFavorite(connID string, key string) bool
 
 	// Recent keys management
-	AddRecentKey(connID int64, key string, keyType types.KeyType)
-	ListRecentKeys(connID int64) []types.RecentKey
-	ClearRecentKeys(connID int64)
+	AddRecentKey(connID string, key string, keyType types.KeyType)
+	ListRecentKeys(connID string) []types.RecentKey
+	ClearRecentKeys(connID string)
 
 	// Value history management
 	AddValueHistory(key string, value types.RedisValue, action string)
@@ -41,8 +40,8 @@ type ConfigService interface {
 	// Groups management
 	ListGroups() []types.ConnectionGroup
 	AddGroup(name, color string) error
-	AddConnectionToGroup(groupName string, connID int64) error
-	RemoveConnectionFromGroup(groupName string, connID int64) error
+	AddConnectionToGroup(groupName string, connID string) error
+	RemoveConnectionFromGroup(groupName string, connID string) error
 
 	// Settings
 	GetKeyBindings() types.KeyBindings
@@ -59,12 +58,12 @@ type ConfigService interface {
 // RedisService defines the interface for Redis operations.
 type RedisService interface {
 	// Connection management
-	Connect(host string, port int, password string, username string, db int) error
-	ConnectWithTLS(host string, port int, password string, db int, tlsConfig *tls.Config) error
-	ConnectCluster(addrs []string, password string) error
+	Connect(conn *types.Connection) error
+	ConnectWithTLS(conn *types.Connection) error
+	ConnectCluster(addrs []string, username string, password string) error
 	Disconnect() error
 	IsCluster() bool
-	TestConnection(host string, port int, password string, username string, db int) (time.Duration, error)
+	TestConnection(conn *types.Connection) (time.Duration, error)
 
 	// Key operations
 	GetTotalKeys() int64

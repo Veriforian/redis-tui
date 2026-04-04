@@ -10,7 +10,9 @@ import (
 
 	"github.com/davidbudnick/redis-tui/internal/cmd"
 	"github.com/davidbudnick/redis-tui/internal/db"
+	"github.com/davidbudnick/redis-tui/internal/redis"
 	"github.com/davidbudnick/redis-tui/internal/secstore"
+	"github.com/davidbudnick/redis-tui/internal/service"
 	"github.com/davidbudnick/redis-tui/internal/types"
 	"github.com/davidbudnick/redis-tui/internal/ui"
 
@@ -163,8 +165,8 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	conn = &types.Connection{
 		Host:       *host,
 		Port:       *port,
-		Password:   *password,
 		Username:   *username,
+		Password:   *password,
 		DB:         *dbNum,
 		UseCluster: *cluster,
 	}
