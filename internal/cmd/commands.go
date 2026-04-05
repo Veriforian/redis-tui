@@ -100,7 +100,7 @@ func (c *Commands) Connect(conn *types.Connection) tea.Cmd {
 		}
 		var err error
 		if conn.UseCluster {
-			err = c.redis.ConnectCluster([]string{fmt.Sprintf("%s:%d", conn.Host, conn.Port)}, conn.Password)
+			err = c.redis.ConnectCluster([]string{fmt.Sprintf("%s:%d", conn.Host, conn.Port)}, conn.Username, conn.Password)
 		} else {
 			err = c.redis.Connect(conn)
 		}

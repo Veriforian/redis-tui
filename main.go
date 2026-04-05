@@ -99,6 +99,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 
 	host := fs.String("host", "", "Redis server hostname (required for quick-connect mode)")
 	port := fs.Int("port", 6379, "Redis server port")
+	username := fs.String("username", "", "Redis username")
 	password := fs.String("password", "", "Redis password")
 	dbNum := fs.Int("db", 0, "Redis database number (0-15)")
 	name := fs.String("name", "", "Connection display name")
@@ -116,6 +117,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	// Short aliases
 	fs.StringVar(host, "h", "", "Redis server hostname (shorthand)")
 	fs.IntVar(port, "p", 6379, "Redis server port (shorthand)")
+	fs.StringVar(username, "u", "", "Redis username (shorthand)")
 	fs.StringVar(password, "a", "", "Redis password (shorthand)")
 	fs.IntVar(dbNum, "n", 0, "Redis database number (shorthand)")
 
@@ -125,6 +127,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 		fmt.Fprintf(os.Stderr, "Flags:\n")
 		fmt.Fprintf(os.Stderr, "  -h, --host string       Redis server hostname (required for quick-connect)\n")
 		fmt.Fprintf(os.Stderr, "  -p, --port int          Redis server port (default 6379)\n")
+		fmt.Fprintf(os.Stderr, "  -u, --username string   Redis username\n")
 		fmt.Fprintf(os.Stderr, "  -a, --password string   Redis password\n")
 		fmt.Fprintf(os.Stderr, "  -n, --db int            Redis database number, 0-15 (default 0)\n")
 		fmt.Fprintf(os.Stderr, "      --name string       Connection display name\n")
@@ -160,6 +163,7 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 	conn = &types.Connection{
 		Host:       *host,
 		Port:       *port,
+		Username:   *username,
 		Password:   *password,
 		DB:         *dbNum,
 		UseCluster: *cluster,

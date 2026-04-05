@@ -15,8 +15,8 @@ func TestNewModel(t *testing.T) {
 	}
 
 	// Check inputs are initialized
-	if len(m.ConnInputs) != 5 {
-		t.Errorf("ConnInputs length = %d, want 5", len(m.ConnInputs))
+	if len(m.ConnInputs) != 6 {
+		t.Errorf("ConnInputs length = %d, want 6", len(m.ConnInputs))
 	}
 
 	if len(m.AddKeyInputs) != 3 {
@@ -40,8 +40,16 @@ func TestNewModel(t *testing.T) {
 		t.Errorf("Port default = %q, want \"6379\"", m.ConnInputs[2].Value())
 	}
 
-	if m.ConnInputs[4].Value() != "0" {
-		t.Errorf("DB default = %q, want \"0\"", m.ConnInputs[4].Value())
+	if m.ConnInputs[3].Value() != "default" {
+		t.Errorf("Username default = %q, want \"default\"", m.ConnInputs[3].Value())
+	}
+
+	if m.ConnInputs[4].Value() != "" {
+		t.Errorf("Password default = %q, want empty", m.ConnInputs[4].Value())
+	}
+
+	if m.ConnInputs[5].Value() != "0" {
+		t.Errorf("DB default = %q, want \"0\"", m.ConnInputs[5].Value())
 	}
 
 	// Check TreeExpanded map is initialized
@@ -107,7 +115,7 @@ func TestModel_GetDB(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewModel()
-			m.ConnInputs[4].SetValue(tt.value)
+			m.ConnInputs[5].SetValue(tt.value)
 
 			got := m.getDB()
 			if got != tt.expected {
@@ -124,8 +132,9 @@ func TestModel_ResetConnInputs(t *testing.T) {
 	m.ConnInputs[0].SetValue("My Connection")
 	m.ConnInputs[1].SetValue("redis.example.com")
 	m.ConnInputs[2].SetValue("6380")
-	m.ConnInputs[3].SetValue("secret")
-	m.ConnInputs[4].SetValue("5")
+	m.ConnInputs[3].SetValue("testuser")
+	m.ConnInputs[4].SetValue("secret")
+	m.ConnInputs[5].SetValue("5")
 	m.ConnFocusIdx = 3
 
 	// Reset
@@ -141,11 +150,11 @@ func TestModel_ResetConnInputs(t *testing.T) {
 	if m.ConnInputs[2].Value() != "6379" {
 		t.Errorf("Port = %q, want \"6379\"", m.ConnInputs[2].Value())
 	}
-	if m.ConnInputs[3].Value() != "" {
-		t.Errorf("Password should be empty, got %q", m.ConnInputs[3].Value())
+	if m.ConnInputs[4].Value() != "" {
+		t.Errorf("Password should be empty, got %q", m.ConnInputs[4].Value())
 	}
-	if m.ConnInputs[4].Value() != "0" {
-		t.Errorf("DB = %q, want \"0\"", m.ConnInputs[4].Value())
+	if m.ConnInputs[5].Value() != "0" {
+		t.Errorf("DB = %q, want \"0\"", m.ConnInputs[5].Value())
 	}
 	if m.ConnFocusIdx != 0 {
 		t.Errorf("ConnFocusIdx = %d, want 0", m.ConnFocusIdx)
@@ -190,6 +199,7 @@ func TestModel_PopulateConnInputs(t *testing.T) {
 		Name:     "Production",
 		Host:     "redis.prod.com",
 		Port:     6380,
+		Username: "testuser",
 		Password: "supersecret",
 		DB:       2,
 	}
@@ -205,10 +215,13 @@ func TestModel_PopulateConnInputs(t *testing.T) {
 	if m.ConnInputs[2].Value() != "6380" {
 		t.Errorf("Port = %q, want \"6380\"", m.ConnInputs[2].Value())
 	}
-	if m.ConnInputs[3].Value() != "supersecret" {
+	if m.ConnInputs[3].Value() != "testuser" {
+		t.Errorf("Username = %q, want \"testuser\"", m.ConnInputs[3].Value())
+	}
+	if m.ConnInputs[4].Value() != "supersecret" {
 		t.Errorf("Password = %q, want \"supersecret\"", m.ConnInputs[3].Value())
 	}
-	if m.ConnInputs[4].Value() != "2" {
+	if m.ConnInputs[5].Value() != "2" {
 		t.Errorf("DB = %q, want \"2\"", m.ConnInputs[4].Value())
 	}
 }
@@ -220,8 +233,9 @@ func TestModel_ConvertCurrentInputsToConnection_Add(t *testing.T) {
 	m.ConnInputs[0].SetValue("My Connection")
 	m.ConnInputs[1].SetValue("redis.example.com")
 	m.ConnInputs[2].SetValue("6380")
-	m.ConnInputs[3].SetValue("secret")
-	m.ConnInputs[4].SetValue("5")
+	m.ConnInputs[3].SetValue("testuser")
+	m.ConnInputs[4].SetValue("secret")
+	m.ConnInputs[5].SetValue("5")
 	m.ConnClusterMode = true
 	m.ConnFocusIdx = 3
 
@@ -236,6 +250,9 @@ func TestModel_ConvertCurrentInputsToConnection_Add(t *testing.T) {
 	}
 	if conn.Port != 6380 {
 		t.Errorf("Port = %d, want %d", conn.Port, 6380)
+	}
+	if conn.Username != "testuser" {
+		t.Errorf("Username = %q, want %q", conn.Username, "testuser")
 	}
 	if conn.Password != "secret" {
 		t.Errorf("Password = %q, want %q", conn.Password, "secret")
@@ -252,12 +269,13 @@ func TestModel_ConvertCurrentInputsToConnection_Edit(t *testing.T) {
 	m := NewModel()
 
 	// Set some values / m state
-	m.EditingConnection = &types.Connection{ID: 1, Name: "Old", Host: "localhost", Port: 6379, DB: 0, UseCluster: false}
+	m.EditingConnection = &types.Connection{ID: 1, Name: "Old", Host: "localhost", Username: "olduser", Password: "old", Port: 6379, DB: 0, UseCluster: false}
 	m.ConnInputs[0].SetValue("My Connection")
 	m.ConnInputs[1].SetValue("redis.example.com")
 	m.ConnInputs[2].SetValue("6380")
-	m.ConnInputs[3].SetValue("secret")
-	m.ConnInputs[4].SetValue("5")
+	m.ConnInputs[3].SetValue("testuser")
+	m.ConnInputs[4].SetValue("secret")
+	m.ConnInputs[5].SetValue("5")
 	m.ConnClusterMode = true
 	m.ConnFocusIdx = 3
 
@@ -272,6 +290,9 @@ func TestModel_ConvertCurrentInputsToConnection_Edit(t *testing.T) {
 	}
 	if conn.Port != 6380 {
 		t.Errorf("Port = %d, want %d", conn.Port, 6380)
+	}
+	if conn.Username != "testuser" {
+		t.Errorf("Username = %q, want %q", conn.Username, "testuser")
 	}
 	if conn.Password != "secret" {
 		t.Errorf("Password = %q, want %q", conn.Password, "secret")

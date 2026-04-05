@@ -26,6 +26,7 @@ const (
 func defaultOptions(conn *types.Connection) *redis.Options {
 	return &redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", conn.Host, conn.Port),
+		Username:     conn.Username,
 		Password:     conn.Password,
 		DB:           conn.DB,
 		DialTimeout:  defaultDialTimeout,
@@ -64,6 +65,7 @@ func (c *Client) Connect(conn *types.Connection) error {
 	c.mu.Lock()
 	c.host = conn.Host
 	c.port = conn.Port
+	c.username = conn.Username
 	c.password = conn.Password
 	c.db = conn.DB
 	c.client = client
@@ -78,7 +80,7 @@ func (c *Client) Connect(conn *types.Connection) error {
 }
 
 // ConnectCluster establishes a connection to a Redis cluster
-func (c *Client) ConnectCluster(addrs []string, password string) error {
+func (c *Client) ConnectCluster(addrs []string, username string, password string) error {
 	c.cleanup()
 
 	// Parse first address for display purposes
@@ -93,6 +95,7 @@ func (c *Client) ConnectCluster(addrs []string, password string) error {
 	cluster := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:        addrs,
 		Password:     password,
+		Username:     username,
 		DialTimeout:  defaultDialTimeout,
 		ReadTimeout:  defaultReadTimeout,
 		WriteTimeout: defaultWriteTimeout,
@@ -110,6 +113,7 @@ func (c *Client) ConnectCluster(addrs []string, password string) error {
 
 	c.mu.Lock()
 	c.isCluster = true
+	c.username = username
 	c.password = password
 	c.host = host
 	c.port = port

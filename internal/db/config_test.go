@@ -55,7 +55,7 @@ func TestNewConfig_CreatesDirectory(t *testing.T) {
 func TestConfig_AddConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Password: "secret", DB: 0, UseCluster: false})
+	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Username: "testuser", Password: "secret", DB: 0, UseCluster: false})
 	if err != nil {
 		t.Fatalf("AddConnection failed: %v", err)
 	}
@@ -71,6 +71,9 @@ func TestConfig_AddConnection(t *testing.T) {
 	}
 	if conn.Port != 6379 {
 		t.Errorf("Port = %d, want 6379", conn.Port)
+	}
+	if conn.Username != "testuser" {
+		t.Errorf("Username = %q, want \"testuser\"", conn.Username)
 	}
 	if conn.Password != "secret" {
 		t.Errorf("Password = %q, want \"secret\"", conn.Password)
@@ -130,12 +133,13 @@ func TestConfig_ListConnections(t *testing.T) {
 func TestConfig_UpdateConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, Password: "old", DB: 0, UseCluster: false})
+	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, Username: "olduser", Password: "old", DB: 0, UseCluster: false})
 	originalCreated := conn.Created
 	conn.Name = "updated"
 	conn.Host = "newhost"
 	conn.Port = 6380
 	conn.Password = "new"
+	conn.Username = "newuser"
 	conn.DB = 1
 
 	updated, err := cfg.UpdateConnection(conn)
@@ -151,6 +155,9 @@ func TestConfig_UpdateConnection(t *testing.T) {
 	}
 	if updated.Port != 6380 {
 		t.Errorf("Port = %d, want 6380", updated.Port)
+	}
+	if updated.Username != "newuser" {
+		t.Errorf("Username = %q, want \"newuser\"", updated.Username)
 	}
 	if updated.Password != "new" {
 		t.Errorf("Password = %q, want \"new\"", updated.Password)
