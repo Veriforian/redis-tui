@@ -33,5 +33,11 @@ func (c *Container) Close() error {
 		}
 	}
 
+	if c.SecureStore != nil {
+		if err := c.SecureStore.Close(); err != nil {
+			lastErr = err
+		}
+	}
+
 	return lastErr
 }

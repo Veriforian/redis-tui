@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/davidbudnick/redis-tui/internal/types"
 )
 
 func TestParseAddr(t *testing.T) {
@@ -47,7 +48,7 @@ func TestConnect(t *testing.T) {
 	client := NewClient()
 	port, _ := strconv.Atoi(mr.Port())
 
-	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+	if err := client.Connect(&types.Connection{Host: mr.Host(), Port: port, DB: 0, UseCluster: false}); err != nil {
 		t.Fatalf("Connect() returned error: %v", err)
 	}
 	t.Cleanup(func() { _ = client.Disconnect() })
@@ -74,7 +75,7 @@ func TestDisconnect(t *testing.T) {
 		client := NewClient()
 		port, _ := strconv.Atoi(mr.Port())
 
-		if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+		if err := client.Connect(&types.Connection{Host: mr.Host(), Port: port, DB: 0, UseCluster: false}); err != nil {
 			t.Fatalf("Connect() returned error: %v", err)
 		}
 
@@ -146,7 +147,7 @@ func TestCleanup(t *testing.T) {
 	client := NewClient()
 	port, _ := strconv.Atoi(mr.Port())
 
-	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+	if err := client.Connect(&types.Connection{Host: mr.Host(), Port: port, DB: 0, UseCluster: false}); err != nil {
 		t.Fatalf("Connect() returned error: %v", err)
 	}
 
@@ -168,7 +169,7 @@ func TestReconnectCycle(t *testing.T) {
 	port, _ := strconv.Atoi(mr.Port())
 
 	// First connect
-	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+	if err := client.Connect(&types.Connection{Host: mr.Host(), Port: port, DB: 0, UseCluster: false}); err != nil {
 		t.Fatalf("first Connect() returned error: %v", err)
 	}
 
@@ -178,7 +179,7 @@ func TestReconnectCycle(t *testing.T) {
 	}
 
 	// Reconnect
-	if err := client.Connect(mr.Host(), port, "", 0); err != nil {
+	if err := client.Connect(&types.Connection{Host: mr.Host(), Port: port, DB: 0, UseCluster: false}); err != nil {
 		t.Fatalf("second Connect() returned error: %v", err)
 	}
 	t.Cleanup(func() { _ = client.Disconnect() })

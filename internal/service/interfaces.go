@@ -169,4 +169,5 @@ type RedisService interface {
 type SecureStoreService interface {
 	Save(connectionID string, password string) error
 	Load(connectionID string) (string, error)
+	Close() error
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davidbudnick/redis-tui/internal/secstore"
 	"github.com/davidbudnick/redis-tui/internal/types"
 )
 
@@ -13,7 +14,8 @@ func TestNewConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")
 
-	cfg, err := NewConfig(path)
+	store, _ := secstore.NewStore(dir, "")
+	cfg, err := NewConfig(path, store)
 	if err != nil {
 		t.Fatalf("NewConfig failed: %v", err)
 	}
@@ -41,7 +43,8 @@ func TestNewConfig_CreatesDirectory(t *testing.T) {
 	dir := t.TempDir()
 	nestedPath := filepath.Join(dir, "subdir", "config.json")
 
-	_, err := NewConfig(nestedPath)
+	store, _ := secstore.NewStore(dir, "")
+	_, err := NewConfig(nestedPath, store)
 	if err != nil {
 		t.Fatalf("NewConfig failed: %v", err)
 	}
@@ -55,12 +58,12 @@ func TestNewConfig_CreatesDirectory(t *testing.T) {
 func TestConfig_AddConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, err := cfg.AddConnection("test", "localhost", 6379, "secret", 0, false)
+	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 	if err != nil {
 		t.Fatalf("AddConnection failed: %v", err)
 	}
 
-	if conn.ID == 0 {
+	if conn.ID == "0" {
 		t.Error("Connection ID should not be 0")
 	}
 	if conn.Name != "test" {
@@ -86,15 +89,15 @@ func TestConfig_AddConnection(t *testing.T) {
 func TestConfig_AddConnection_IncrementingIDs(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn1, _ := cfg.AddConnection("test1", "localhost", 6379, "", 0, false)
-	conn2, _ := cfg.AddConnection("test2", "localhost", 6380, "", 0, false)
-	conn3, _ := cfg.AddConnection("test3", "localhost", 6381, "", 0, false)
+	conn1, _ := cfg.AddConnection(types.Connection{Name: "test1", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	conn2, _ := cfg.AddConnection(types.Connection{Name: "test2", Host: "localhost", Port: 6380, DB: 0, UseCluster: false})
+	conn3, _ := cfg.AddConnection(types.Connection{Name: "test3", Host: "localhost", Port: 6381, DB: 0, UseCluster: false})
 
 	if conn2.ID <= conn1.ID {
-		t.Errorf("conn2.ID (%d) should be greater than conn1.ID (%d)", conn2.ID, conn1.ID)
+		t.Errorf("conn2.ID (%s) should be greater than conn1.ID (%s)", conn2.ID, conn1.ID)
 	}
 	if conn3.ID <= conn2.ID {
-		t.Errorf("conn3.ID (%d) should be greater than conn2.ID (%d)", conn3.ID, conn2.ID)
+		t.Errorf("conn3.ID (%s) should be greater than conn2.ID (%s)", conn3.ID, conn2.ID)
 	}
 }
 
@@ -102,9 +105,9 @@ func TestConfig_ListConnections(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Add connections in non-alphabetical order
-	cfg.AddConnection("zebra", "localhost", 6379, "", 0, false)
-	cfg.AddConnection("alpha", "localhost", 6380, "", 0, false)
-	cfg.AddConnection("beta", "localhost", 6381, "", 0, false)
+	cfg.AddConnection(types.Connection{Name: "zebra", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	cfg.AddConnection(types.Connection{Name: "alpha", Host: "localhost", Port: 6380, DB: 0, UseCluster: false})
+	cfg.AddConnection(types.Connection{Name: "beta", Host: "localhost", Port: 6381, DB: 0, UseCluster: false})
 
 	connections, err := cfg.ListConnections()
 	if err != nil {
@@ -130,10 +133,11 @@ func TestConfig_ListConnections(t *testing.T) {
 func TestConfig_UpdateConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection("original", "localhost", 6379, "old", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	conn.ID = "1"
 	originalCreated := conn.Created
 
-	updated, err := cfg.UpdateConnection(conn.ID, "updated", "newhost", 6380, "new", 1, false)
+	updated, err := cfg.UpdateConnection(conn)
 	if err != nil {
 		t.Fatalf("UpdateConnection failed: %v", err)
 	}
@@ -164,7 +168,7 @@ func TestConfig_UpdateConnection(t *testing.T) {
 func TestConfig_UpdateConnection_NotFound(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	_, err := cfg.UpdateConnection(999, "test", "localhost", 6379, "", 0, false)
+	_, err := cfg.UpdateConnection(types.Connection{ID: "999", Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 	if !os.IsNotExist(err) {
 		t.Errorf("Expected os.ErrNotExist, got %v", err)
 	}
@@ -173,7 +177,7 @@ func TestConfig_UpdateConnection_NotFound(t *testing.T) {
 func TestConfig_DeleteConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection("test", "localhost", 6379, "", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 
 	err := cfg.DeleteConnection(conn.ID)
 	if err != nil {
@@ -189,7 +193,7 @@ func TestConfig_DeleteConnection(t *testing.T) {
 func TestConfig_DeleteConnection_NotFound(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	err := cfg.DeleteConnection(999)
+	err := cfg.DeleteConnection("999")
 	if !os.IsNotExist(err) {
 		t.Errorf("Expected os.ErrNotExist, got %v", err)
 	}
@@ -199,7 +203,7 @@ func TestConfig_Favorites(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Add favorite
-	fav, err := cfg.AddFavorite(1, "user:123", "Test User")
+	fav, err := cfg.AddFavorite("1", "user:123", "Test User")
 	if err != nil {
 		t.Fatalf("AddFavorite failed: %v", err)
 	}
@@ -208,26 +212,26 @@ func TestConfig_Favorites(t *testing.T) {
 	}
 
 	// Check is favorite
-	if !cfg.IsFavorite(1, "user:123") {
+	if !cfg.IsFavorite("1", "user:123") {
 		t.Error("IsFavorite should return true")
 	}
-	if cfg.IsFavorite(1, "other:key") {
+	if cfg.IsFavorite("1", "other:key") {
 		t.Error("IsFavorite should return false for non-favorite")
 	}
 
 	// List favorites
-	favs := cfg.ListFavorites(1)
+	favs := cfg.ListFavorites("1")
 	if len(favs) != 1 {
 		t.Errorf("Expected 1 favorite, got %d", len(favs))
 	}
 
 	// Remove favorite
-	err = cfg.RemoveFavorite(1, "user:123")
+	err = cfg.RemoveFavorite("1", "user:123")
 	if err != nil {
 		t.Fatalf("RemoveFavorite failed: %v", err)
 	}
 
-	if cfg.IsFavorite(1, "user:123") {
+	if cfg.IsFavorite("1", "user:123") {
 		t.Error("IsFavorite should return false after removal")
 	}
 }
@@ -236,10 +240,10 @@ func TestConfig_Favorites_NoDuplicates(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Add same favorite twice
-	cfg.AddFavorite(1, "user:123", "Label 1")
-	cfg.AddFavorite(1, "user:123", "Label 2")
+	cfg.AddFavorite("1", "user:123", "Label 1")
+	cfg.AddFavorite("1", "user:123", "Label 2")
 
-	favs := cfg.ListFavorites(1)
+	favs := cfg.ListFavorites("1")
 	if len(favs) != 1 {
 		t.Errorf("Expected 1 favorite (no duplicates), got %d", len(favs))
 	}
@@ -249,11 +253,11 @@ func TestConfig_RecentKeys(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Add recent keys
-	cfg.AddRecentKey(1, "key1", types.KeyTypeString)
-	cfg.AddRecentKey(1, "key2", types.KeyTypeHash)
-	cfg.AddRecentKey(1, "key3", types.KeyTypeList)
+	cfg.AddRecentKey("1", "key1", types.KeyTypeString)
+	cfg.AddRecentKey("1", "key2", types.KeyTypeHash)
+	cfg.AddRecentKey("1", "key3", types.KeyTypeList)
 
-	recents := cfg.ListRecentKeys(1)
+	recents := cfg.ListRecentKeys("1")
 	if len(recents) != 3 {
 		t.Errorf("Expected 3 recent keys, got %d", len(recents))
 	}
@@ -270,10 +274,10 @@ func TestConfig_RecentKeys_MaxLimit(t *testing.T) {
 
 	// Add more than max
 	for i := 0; i < 5; i++ {
-		cfg.AddRecentKey(1, "key"+string(rune('a'+i)), types.KeyTypeString)
+		cfg.AddRecentKey("1", "key"+string(rune('a'+i)), types.KeyTypeString)
 	}
 
-	recents := cfg.ListRecentKeys(1)
+	recents := cfg.ListRecentKeys("1")
 	if len(recents) != 3 {
 		t.Errorf("Expected max 3 recent keys, got %d", len(recents))
 	}
@@ -282,11 +286,11 @@ func TestConfig_RecentKeys_MaxLimit(t *testing.T) {
 func TestConfig_RecentKeys_MovesToFront(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	cfg.AddRecentKey(1, "key1", types.KeyTypeString)
-	cfg.AddRecentKey(1, "key2", types.KeyTypeString)
-	cfg.AddRecentKey(1, "key1", types.KeyTypeString) // Re-add key1
+	cfg.AddRecentKey("1", "key1", types.KeyTypeString)
+	cfg.AddRecentKey("1", "key2", types.KeyTypeString)
+	cfg.AddRecentKey("1", "key1", types.KeyTypeString) // Re-add key1
 
-	recents := cfg.ListRecentKeys(1)
+	recents := cfg.ListRecentKeys("1")
 	if recents[0].Key != "key1" {
 		t.Errorf("Most recent key = %q, want \"key1\"", recents[0].Key)
 	}
@@ -375,12 +379,13 @@ func TestConfig_Persistence(t *testing.T) {
 	path := filepath.Join(dir, "config.json")
 
 	// Create config and add data
-	cfg1, _ := NewConfig(path)
-	cfg1.AddConnection("test", "localhost", 6379, "pass", 0, false)
-	cfg1.AddFavorite(1, "key1", "label")
+	store, _ := secstore.NewStore(dir, "")
+	cfg1, _ := NewConfig(path, store)
+	cfg1.AddConnection(types.Connection{ID: "1", Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	cfg1.AddFavorite("1", "key1", "label")
 
 	// Create new config from same file
-	cfg2, err := NewConfig(path)
+	cfg2, err := NewConfig(path, store)
 	if err != nil {
 		t.Fatalf("NewConfig failed: %v", err)
 	}
@@ -473,7 +478,7 @@ func TestConfig_Groups(t *testing.T) {
 	}
 
 	// Add connection to group
-	conn, _ := cfg.AddConnection("test", "localhost", 6379, "", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 	err = cfg.AddConnectionToGroup("Production", conn.ID)
 	if err != nil {
 		t.Fatalf("AddConnectionToGroup failed: %v", err)
@@ -524,7 +529,8 @@ func newTestConfig(t *testing.T) *Config {
 	t.Helper()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.json")
-	cfg, err := NewConfig(path)
+	store, _ := secstore.NewStore(dir, "")
+	cfg, err := NewConfig(path, store)
 	if err != nil {
 		t.Fatalf("failed to create test config: %v", err)
 	}

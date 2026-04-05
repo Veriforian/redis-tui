@@ -34,6 +34,10 @@ type Store struct {
 	vaultPath string
 }
 
+func (s *Store) Close() error {
+	return nil
+}
+
 // NewStore creates a new Store instance.
 func NewStore(configDir string, userSecret string) (*Store, error) {
 	kr, err := keyring.Open(keyring.Config{

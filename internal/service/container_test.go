@@ -19,16 +19,26 @@ func newMockRedis(disconnectErr error) *testutil.FullMockRedisClient {
 	return m
 }
 
+func newMockStore(closeErr error) *testutil.MockSecureStoreClient {
+	m := testutil.NewMockSecureStoreClient()
+	m.CloseError = closeErr
+	return m
+}
+
 func TestNewContainer(t *testing.T) {
 	cfg := newMockConfig(nil)
 	r := newMockRedis(nil)
-	c := NewContainer(cfg, r)
+	s := newMockStore(nil)
+	c := NewContainer(cfg, r, s)
 
 	if c.Config != cfg {
 		t.Error("Config not set correctly")
 	}
 	if c.Redis != r {
 		t.Error("Redis not set correctly")
+	}
+	if c.SecureStore != s {
+		t.Error("SecureStore not set correctly")
 	}
 }
 
@@ -63,12 +73,25 @@ func TestContainer_Close(t *testing.T) {
 		}
 	})
 
+	t.Run("secure store error only", func(t *testing.T) {
+		storeErr := errors.New("store error")
+		c := &Container{
+			SecureStore: newMockStore(storeErr),
+		}
+		err := c.Close()
+		if err != storeErr {
+			t.Errorf("expected store error, got %v", err)
+		}
+	})
+
 	t.Run("both errors returns last", func(t *testing.T) {
 		configErr := errors.New("config error")
+		storeErr := errors.New("store error")
 		redisErr := errors.New("redis error")
 		c := &Container{
-			Config: newMockConfig(configErr),
-			Redis:  newMockRedis(redisErr),
+			Config:      newMockConfig(configErr),
+			SecureStore: newMockStore(storeErr),
+			Redis:       newMockRedis(redisErr),
 		}
 		err := c.Close()
 		if err != redisErr {

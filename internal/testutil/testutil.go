@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/davidbudnick/redis-tui/internal/db"
+	"github.com/davidbudnick/redis-tui/internal/secstore"
 	"github.com/davidbudnick/redis-tui/internal/types"
 )
 
@@ -21,8 +22,10 @@ func TempConfigPath(t *testing.T) string {
 // NewTestConfig creates a new Config instance using a temporary file for testing.
 func NewTestConfig(t *testing.T) *db.Config {
 	t.Helper()
+	dir := t.TempDir()
 	path := TempConfigPath(t)
-	cfg, err := db.NewConfig(path)
+	store, _ := secstore.NewStore(dir, "")
+	cfg, err := db.NewConfig(path, store)
 	if err != nil {
 		t.Fatalf("failed to create test config: %v", err)
 	}
@@ -30,9 +33,9 @@ func NewTestConfig(t *testing.T) *db.Config {
 }
 
 // MustAddConnection adds a connection to the config or fails the test.
-func MustAddConnection(t *testing.T, cfg *db.Config, name, host string, port int, password string, dbNum int) types.Connection {
+func MustAddConnection(t *testing.T, cfg *db.Config, conn types.Connection) types.Connection {
 	t.Helper()
-	conn, err := cfg.AddConnection(name, host, port, password, dbNum, false)
+	conn, err := cfg.AddConnection(conn)
 	if err != nil {
 		t.Fatalf("failed to add connection: %v", err)
 	}
@@ -40,7 +43,7 @@ func MustAddConnection(t *testing.T, cfg *db.Config, name, host string, port int
 }
 
 // AssertConnectionExists checks that a connection with the given ID exists.
-func AssertConnectionExists(t *testing.T, cfg *db.Config, id int64) types.Connection {
+func AssertConnectionExists(t *testing.T, cfg *db.Config, id string) types.Connection {
 	t.Helper()
 	connections, err := cfg.ListConnections()
 	if err != nil {
@@ -51,12 +54,12 @@ func AssertConnectionExists(t *testing.T, cfg *db.Config, id int64) types.Connec
 			return conn
 		}
 	}
-	t.Fatalf("connection with ID %d not found", id)
+	t.Fatalf("connection with ID %s not found", id)
 	return types.Connection{}
 }
 
 // AssertConnectionNotExists checks that a connection with the given ID does not exist.
-func AssertConnectionNotExists(t *testing.T, cfg *db.Config, id int64) {
+func AssertConnectionNotExists(t *testing.T, cfg *db.Config, id string) {
 	t.Helper()
 	connections, err := cfg.ListConnections()
 	if err != nil {
@@ -64,7 +67,7 @@ func AssertConnectionNotExists(t *testing.T, cfg *db.Config, id int64) {
 	}
 	for _, conn := range connections {
 		if conn.ID == id {
-			t.Fatalf("connection with ID %d should not exist", id)
+			t.Fatalf("connection with ID %s should not exist", id)
 		}
 	}
 }
@@ -110,7 +113,7 @@ func FileExists(path string) bool {
 // SampleConnection returns a sample connection for testing.
 func SampleConnection() types.Connection {
 	return types.Connection{
-		ID:       1,
+		ID:       "1",
 		Name:     "test-redis",
 		Host:     "localhost",
 		Port:     6379,
@@ -129,7 +132,7 @@ func SampleRedisKey(name string, keyType types.KeyType) types.RedisKey {
 }
 
 // SampleFavorite returns a sample favorite for testing.
-func SampleFavorite(connID int64, key string) types.Favorite {
+func SampleFavorite(connID string, key string) types.Favorite {
 	return types.Favorite{
 		ConnectionID: connID,
 		Key:          key,
