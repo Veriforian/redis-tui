@@ -340,6 +340,7 @@ func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	switch msg.String() {
 	case "/":
+		m.DetailSearchInput.SetValue("")
 		m.DetailSearchInput.Focus()
 		return m, nil
 	case "n":

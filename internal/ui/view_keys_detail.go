@@ -97,7 +97,10 @@ func (m Model) viewKeyDetail() string {
 			end = len(valueLines)
 		}
 
-		visible := valueLines[m.DetailScroll:end]
+		// Deep copy
+		visibleChunk := valueLines[m.DetailScroll:end]
+		visible := make([]string, len(visibleChunk))
+		copy(visible, visibleChunk)
 
 		// Highlight search matches
 		if m.DetailSearchTerm != "" {
@@ -140,6 +143,34 @@ func (m Model) viewKeyDetail() string {
 			scrollInfo += dimStyle.Render(fmt.Sprintf("↓ %d more lines below", remaining))
 		}
 		valueStr = scrollInfo
+	} else {
+		visible := make([]string, len(valueLines))
+		copy(visible, valueLines)
+		if m.DetailSearchTerm != "" {
+			re := regexp.MustCompile(`(?i)(` + regexp.QuoteMeta(m.DetailSearchTerm) + `)`)
+			activeLine := -1
+			if len(m.DetailMatchLines) > 0 {
+				activeLine = m.DetailMatchLines[m.DetailMatchIdx]
+			}
+
+			for i, line := range visible {
+				if i == activeLine {
+					matchCount := 0
+					visible[i] = re.ReplaceAllStringFunc(line, func(match string) string {
+						if matchCount == 0 {
+							matchCount++
+							return activeSearchHighlightStyle.Render(match)
+						}
+						return searchHighlightStyle.Render(match)
+					})
+				} else {
+					visible[i] = re.ReplaceAllStringFunc(line, func(match string) string {
+						return searchHighlightStyle.Render(match)
+					})
+				}
+			}
+		}
+		valueStr = strings.Join(visible, "\n")
 	}
 
 	b.WriteString(valueBox.Render(valueStr))
@@ -154,12 +185,30 @@ func (m Model) viewKeyDetail() string {
 	default:
 		helpText += "  a:add  x:remove"
 	}
-	helpText += "  /:search  esc:back"
+
+	if m.DetailSearchTerm != "" {
+		helpText += "  n/N:jump  esc:clear  q:back"
+	} else {
+		helpText += "  /:search  esc:back"
+	}
 
 	if m.DetailSearchInput.Focused() {
 		b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Left, m.DetailSearchInput.View()))
 	} else {
-		b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Center, helpStyle.Render(helpText)))
+		helpStr := helpStyle.Render(helpText)
+
+		if m.DetailSearchTerm != "" {
+			current := m.DetailMatchIdx + 1
+			if len(m.DetailMatchLines) == 0 {
+				current = 0
+			}
+			trackerText := fmt.Sprintf("[%d/%d]", current, len(m.DetailMatchLines))
+
+			trackerStyled := lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true).Render(trackerText)
+			helpStr += "  " + trackerStyled
+		}
+
+		b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Center, helpStr))
 	}
 
 	return b.String()
