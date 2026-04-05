@@ -4,16 +4,16 @@ package service
 // This enables dependency injection and makes the code more testable.
 type Container struct {
 	Config      ConfigService
-	Redis       RedisService
 	SecureStore SecureStoreService
+	Redis       RedisService
 }
 
 // NewContainer creates a new service container with the provided services.
 func NewContainer(config ConfigService, redis RedisService, store SecureStoreService) *Container {
 	return &Container{
 		Config:      config,
-		Redis:       redis,
 		SecureStore: store,
+		Redis:       redis,
 	}
 }
 
@@ -27,14 +27,14 @@ func (c *Container) Close() error {
 		}
 	}
 
-	if c.Redis != nil {
-		if err := c.Redis.Disconnect(); err != nil {
+	if c.SecureStore != nil {
+		if err := c.SecureStore.Close(); err != nil {
 			lastErr = err
 		}
 	}
 
-	if c.SecureStore != nil {
-		if err := c.SecureStore.Close(); err != nil {
+	if c.Redis != nil {
+		if err := c.Redis.Disconnect(); err != nil {
 			lastErr = err
 		}
 	}

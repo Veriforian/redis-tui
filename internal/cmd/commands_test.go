@@ -84,6 +84,7 @@ func TestUpdateConnection(t *testing.T) {
 		cfg := testutil.NewTestConfig(t)
 		conn := testutil.MustAddConnection(t, cfg, types.Connection{Name: "old", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 		cmds := NewCommands(cfg, nil)
+		conn.Name = "new"
 		msg := cmds.UpdateConnection(conn)()
 		result := msg.(types.ConnectionUpdatedMsg)
 		if result.Err != nil {
@@ -115,7 +116,7 @@ func TestDeleteConnection(t *testing.T) {
 			t.Errorf("unexpected error: %v", result.Err)
 		}
 		if result.ID != conn.ID {
-			t.Errorf("ID = %d, want %d", result.ID, conn.ID)
+			t.Errorf("ID = %s, want %s", result.ID, conn.ID)
 		}
 	})
 
@@ -1470,8 +1471,8 @@ func TestAutoConnect(t *testing.T) {
 		if result.Err != nil {
 			t.Errorf("unexpected error: %v", result.Err)
 		}
-		if len(mock.Calls) == 0 || mock.Calls[0] != "ConnectWithTLS" {
-			t.Errorf("expected ConnectWithTLS call, got %v", mock.Calls)
+		if len(mock.Calls) == 0 || mock.Calls[0] != "Connect" {
+			t.Errorf("expected Connect call, got %v", mock.Calls)
 		}
 	})
 

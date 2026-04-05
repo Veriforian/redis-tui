@@ -58,7 +58,7 @@ const (
 	ScreenRedisConfig
 )
 
-// ScreenName returns a human-readable name for the screen
+// String returns a human-readable name for the screen
 func (s Screen) String() string {
 	names := map[Screen]string{
 		ScreenConnections:          "Connections",

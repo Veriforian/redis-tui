@@ -58,7 +58,7 @@ func TestNewConfig_CreatesDirectory(t *testing.T) {
 func TestConfig_AddConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Password: "secret", Port: 6379, DB: 0, UseCluster: false, Created: time.Now()})
 	if err != nil {
 		t.Fatalf("AddConnection failed: %v", err)
 	}
@@ -86,18 +86,24 @@ func TestConfig_AddConnection(t *testing.T) {
 	}
 }
 
-func TestConfig_AddConnection_IncrementingIDs(t *testing.T) {
+func TestConfig_AddConnection_UniqueIDs(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	conn1, _ := cfg.AddConnection(types.Connection{Name: "test1", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
 	conn2, _ := cfg.AddConnection(types.Connection{Name: "test2", Host: "localhost", Port: 6380, DB: 0, UseCluster: false})
 	conn3, _ := cfg.AddConnection(types.Connection{Name: "test3", Host: "localhost", Port: 6381, DB: 0, UseCluster: false})
 
-	if conn2.ID <= conn1.ID {
-		t.Errorf("conn2.ID (%s) should be greater than conn1.ID (%s)", conn2.ID, conn1.ID)
+	if conn2.ID == conn1.ID {
+		t.Errorf("conn2.ID (%s) should not be equal to conn1.ID (%s)", conn2.ID, conn1.ID)
+		return
 	}
-	if conn3.ID <= conn2.ID {
-		t.Errorf("conn3.ID (%s) should be greater than conn2.ID (%s)", conn3.ID, conn2.ID)
+	if conn3.ID == conn2.ID {
+		t.Errorf("conn3.ID (%s) should not be equal to conn2.ID (%s)", conn3.ID, conn2.ID)
+		return
+	}
+	if conn3.ID == conn1.ID {
+		t.Errorf("conn3.ID (%s) should not be equal to conn1.ID (%s)", conn3.ID, conn1.ID)
+		return
 	}
 }
 
@@ -118,7 +124,7 @@ func TestConfig_ListConnections(t *testing.T) {
 		t.Fatalf("Expected 3 connections, got %d", len(connections))
 	}
 
-	// Check sorted by ID (insertion order)
+	// Check sorted by Created (insertion order)
 	if connections[0].Name != "zebra" {
 		t.Errorf("First connection = %q, want \"zebra\"", connections[0].Name)
 	}
@@ -133,9 +139,15 @@ func TestConfig_ListConnections(t *testing.T) {
 func TestConfig_UpdateConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
-	conn.ID = "1"
+	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, DB: 0, UseCluster: false, Created: time.Now(), Updated: time.Now()})
 	originalCreated := conn.Created
+
+	conn.Name = "updated"
+	conn.Host = "newhost"
+	conn.Port = 6380
+	conn.Password = "new"
+	conn.DB = 1
+	conn.UseCluster = true
 
 	updated, err := cfg.UpdateConnection(conn)
 	if err != nil {
@@ -156,6 +168,9 @@ func TestConfig_UpdateConnection(t *testing.T) {
 	}
 	if updated.DB != 1 {
 		t.Errorf("DB = %d, want 1", updated.DB)
+	}
+	if updated.UseCluster != true {
+		t.Errorf("UseCluster = %v, want true", updated.UseCluster)
 	}
 	if !updated.Created.Equal(originalCreated) {
 		t.Error("Created timestamp should not change")

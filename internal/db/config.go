@@ -166,9 +166,9 @@ func (c *Config) load() error {
 }
 
 func (c *Config) save() error {
-	for _, conn := range c.Connections {
+	for i, conn := range c.Connections {
 		if conn.ID == "" {
-			conn.ID = GenerateID()
+			c.Connections[i].ID = GenerateID()
 		}
 
 		// Store creds in secure storage
@@ -239,7 +239,7 @@ func (c *Config) ListConnections() ([]types.Connection, error) {
 	copy(result, c.Connections)
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].ID < result[j].ID
+		return result[i].Created.Before(result[j].Created)
 	})
 
 	return result, nil
@@ -249,6 +249,11 @@ func (c *Config) AddConnection(conn types.Connection) (types.Connection, error) 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	now := time.Now()
+
+	conn.Created = now
+	conn.Updated = now
+
 	c.Connections = append(c.Connections, conn)
 
 	if err := c.save(); err != nil {
@@ -256,7 +261,9 @@ func (c *Config) AddConnection(conn types.Connection) (types.Connection, error) 
 		return types.Connection{}, err
 	}
 
-	return conn, nil
+	addedConnection := c.Connections[len(c.Connections)-1]
+
+	return addedConnection, nil
 }
 
 func (c *Config) UpdateConnection(conn types.Connection) (types.Connection, error) {
@@ -387,7 +394,7 @@ func (c *Config) IsFavorite(connID string, key string) bool {
 	return false
 }
 
-// Recent keys management
+// AddRecentKey adds a recent key to the config
 func (c *Config) AddRecentKey(connID string, key string, keyType types.KeyType) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

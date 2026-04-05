@@ -340,7 +340,6 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, action string) types.Connection {
-	now := time.Now()
 	var id string
 	if action == "edit" {
 		id = m.EditingConnection.ID
@@ -354,8 +353,6 @@ func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, actio
 		Username:   inputs[4].Value(),
 		DB:         m.getDB(),
 		UseCluster: inputs[5].Value() == "1",
-		Created:    now,
-		Updated:    now,
 	}
 }
 

@@ -15,8 +15,8 @@ func TestNewModel(t *testing.T) {
 	}
 
 	// Check inputs are initialized
-	if len(m.ConnInputs) != 5 {
-		t.Errorf("ConnInputs length = %d, want 5", len(m.ConnInputs))
+	if len(m.ConnInputs) != 6 {
+		t.Errorf("ConnInputs length = %d, want 6", len(m.ConnInputs))
 	}
 
 	if len(m.AddKeyInputs) != 3 {
@@ -40,8 +40,8 @@ func TestNewModel(t *testing.T) {
 		t.Errorf("Port default = %q, want \"6379\"", m.ConnInputs[2].Value())
 	}
 
-	if m.ConnInputs[4].Value() != "0" {
-		t.Errorf("DB default = %q, want \"0\"", m.ConnInputs[4].Value())
+	if m.ConnInputs[5].Value() != "0" {
+		t.Errorf("DB default = %q, want \"0\"", m.ConnInputs[5].Value())
 	}
 
 	// Check TreeExpanded map is initialized
@@ -107,7 +107,7 @@ func TestModel_GetDB(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewModel()
-			m.ConnInputs[4].SetValue(tt.value)
+			m.ConnInputs[5].SetValue(tt.value)
 
 			got := m.getDB()
 			if got != tt.expected {
@@ -125,7 +125,8 @@ func TestModel_ResetConnInputs(t *testing.T) {
 	m.ConnInputs[1].SetValue("redis.example.com")
 	m.ConnInputs[2].SetValue("6380")
 	m.ConnInputs[3].SetValue("secret")
-	m.ConnInputs[4].SetValue("5")
+	m.ConnInputs[4].SetValue("username")
+	m.ConnInputs[5].SetValue("5")
 	m.ConnFocusIdx = 3
 
 	// Reset
@@ -144,7 +145,10 @@ func TestModel_ResetConnInputs(t *testing.T) {
 	if m.ConnInputs[3].Value() != "" {
 		t.Errorf("Password should be empty, got %q", m.ConnInputs[3].Value())
 	}
-	if m.ConnInputs[4].Value() != "0" {
+	if m.ConnInputs[4].Value() != "default" {
+		t.Errorf("Username = %q, want \"default\"", m.ConnInputs[4].Value())
+	}
+	if m.ConnInputs[5].Value() != "0" {
 		t.Errorf("DB = %q, want \"0\"", m.ConnInputs[4].Value())
 	}
 	if m.ConnFocusIdx != 0 {
@@ -191,6 +195,7 @@ func TestModel_PopulateConnInputs(t *testing.T) {
 		Host:     "redis.prod.com",
 		Port:     6380,
 		Password: "supersecret",
+		Username: "user",
 		DB:       2,
 	}
 
@@ -208,7 +213,10 @@ func TestModel_PopulateConnInputs(t *testing.T) {
 	if m.ConnInputs[3].Value() != "supersecret" {
 		t.Errorf("Password = %q, want \"supersecret\"", m.ConnInputs[3].Value())
 	}
-	if m.ConnInputs[4].Value() != "2" {
+	if m.ConnInputs[4].Value() != "user" {
+		t.Errorf("Username = %q, want \"default\"", m.ConnInputs[4].Value())
+	}
+	if m.ConnInputs[5].Value() != "2" {
 		t.Errorf("DB = %q, want \"2\"", m.ConnInputs[4].Value())
 	}
 }
