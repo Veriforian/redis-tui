@@ -295,7 +295,7 @@ func (c *Config) UpdateConnection(conn types.Connection) (types.Connection, erro
 			c.Connections[i] = updatedConn
 
 			if err := c.save(); err != nil {
-				c.Connections[i] = conn // Rollback
+				c.Connections[i] = toUpdateConn // Rollback
 				return types.Connection{}, err
 			}
 

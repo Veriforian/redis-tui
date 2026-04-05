@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -74,7 +75,231 @@ func (m Model) viewKeyDetail() string {
 		Padding(1, 2).
 		Width(boxWidth)
 
+	valueLines := m.DetailValueLines
+
+	// Reserve lines for header (6) + border/padding (4) + help (2)
+	maxVisible := m.Height - 12
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	var valueStr string
+
+	if len(valueLines) > maxVisible {
+		if m.DetailScroll > len(valueLines)-maxVisible {
+			m.DetailScroll = len(valueLines) - maxVisible
+		}
+		if m.DetailScroll < 0 {
+			m.DetailScroll = 0
+		}
+		end := m.DetailScroll + maxVisible
+		if end > len(valueLines) {
+			end = len(valueLines)
+		}
+
+		visible := valueLines[m.DetailScroll:end]
+
+		// Highlight search matches
+		if m.DetailSearchTerm != "" {
+			re := regexp.MustCompile(`(?i)(` + regexp.QuoteMeta(m.DetailSearchTerm) + `)`)
+			activeLine := -1
+			if len(m.DetailMatchLines) > 0 {
+				activeLine = m.DetailMatchLines[m.DetailMatchIdx]
+			}
+
+			for i, line := range visible {
+				globalIdx := m.DetailScroll + i
+				if globalIdx == activeLine {
+					matchCount := 0
+
+					visible[i] = re.ReplaceAllStringFunc(line, func(match string) string {
+						if matchCount == 0 {
+							matchCount++
+							return activeSearchHighlightStyle.Render(match)
+						}
+						return searchHighlightStyle.Render(match)
+					})
+				} else {
+					visible[i] = re.ReplaceAllStringFunc(line, func(match string) string {
+						return searchHighlightStyle.Render(match)
+					})
+				}
+			}
+		}
+
+		var scrollInfo string
+		if m.DetailScroll > 0 {
+			scrollInfo += dimStyle.Render(fmt.Sprintf("↑ %d more lines above", m.DetailScroll))
+			scrollInfo += "\n"
+		}
+		scrollInfo += strings.Join(visible, "\n")
+
+		remaining := len(valueLines) - end
+		if remaining > 0 {
+			scrollInfo += "\n"
+			scrollInfo += dimStyle.Render(fmt.Sprintf("↓ %d more lines below", remaining))
+		}
+		valueStr = scrollInfo
+	}
+
+	b.WriteString(valueBox.Render(valueStr))
+	b.WriteString("\n\n")
+
+	helpText := "t:TTL  d:del  r:refresh  R:rename  c:copy"
+	switch m.CurrentKey.Type {
+	case types.KeyTypeString, types.KeyTypeJSON:
+		helpText += "  e:edit"
+	case types.KeyTypeHyperLogLog, types.KeyTypeBitmap:
+		helpText += "  a:add"
+	default:
+		helpText += "  a:add  x:remove"
+	}
+	helpText += "  /:search  esc:back"
+
+	if m.DetailSearchInput.Focused() {
+		b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Left, m.DetailSearchInput.View()))
+	} else {
+		b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Center, helpStyle.Render(helpText)))
+	}
+
+	return b.String()
+}
+
+func (m Model) detailValueString() string {
 	var vc strings.Builder
+	switch m.CurrentValue.Type {
+	case types.KeyTypeString:
+		vc.WriteString(formatPossibleJSON(m.CurrentValue.StringValue))
+	case types.KeyTypeList:
+		for i, v := range m.CurrentValue.ListValue {
+			fmt.Fprintf(&vc, "%d. %s\n", i, v)
+		}
+	case types.KeyTypeSet:
+		for _, v := range m.CurrentValue.SetValue {
+			fmt.Fprintf(&vc, "• %s\n", v)
+		}
+	case types.KeyTypeZSet:
+		for _, v := range m.CurrentValue.ZSetValue {
+			fmt.Fprintf(&vc, "%.2f: %s\n", v.Score, v.Member)
+		}
+	case types.KeyTypeHash:
+		for k, v := range m.CurrentValue.HashValue {
+			fmt.Fprintf(&vc, "%s: %s\n", k, v)
+		}
+	case types.KeyTypeStream:
+		for _, e := range m.CurrentValue.StreamValue {
+			fmt.Fprintf(&vc, "%s\n", e.ID)
+		}
+	case types.KeyTypeJSON:
+		vc.WriteString(formatPossibleJSON(m.CurrentValue.JSONValue))
+	case types.KeyTypeHyperLogLog:
+		fmt.Fprintf(&vc, "Estimated cardinality: %d", m.CurrentValue.HLLCount)
+	case types.KeyTypeBitmap:
+		fmt.Fprintf(&vc, "Bit count: %d\n", m.CurrentValue.BitCount)
+		for _, pos := range m.CurrentValue.BitPositions {
+			fmt.Fprintf(&vc, "  bit %d = 1\n", pos)
+		}
+	case types.KeyTypeGeo:
+		for _, g := range m.CurrentValue.GeoValue {
+			fmt.Fprintf(&vc, "%s  (%.6f, %.6f)\n", g.Name, g.Longitude, g.Latitude)
+		}
+	}
+	return strings.TrimSpace(vc.String())
+}
+
+func (m Model) detailMaxScroll() int {
+	maxVisible := m.Height - 12
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+	totalLines := len(m.DetailValueLines)
+	maxScroll := totalLines - maxVisible
+	if maxScroll < 0 {
+		return 0
+	}
+	return maxScroll
+}
+
+func (m Model) viewAddKey() string {
+	var b strings.Builder
+
+	b.WriteString(titleStyle.Render("Add Key"))
+	b.WriteString("\n\n")
+
+	b.WriteString(keyStyle.Render("Type: "))
+	b.WriteString(getTypeStyleBold(m.AddKeyType).Render(string(m.AddKeyType)))
+	b.WriteString(dimStyle.Render(" (Ctrl+T to change)"))
+	b.WriteString("\n\n")
+
+	b.WriteString(keyStyle.Render("Key Name:"))
+	b.WriteString("\n")
+	b.WriteString(m.AddKeyInputs[0].View())
+	b.WriteString("\n\n")
+
+	// Determine labels and whether to show the third input based on type
+	valueLabel := "Value:"
+	showThirdInput := false
+	thirdLabel := ""
+
+	switch m.AddKeyType {
+	case types.KeyTypeList:
+		valueLabel = "Element:"
+	case types.KeyTypeSet:
+		valueLabel = "Member:"
+	case types.KeyTypeZSet:
+		valueLabel = "Member:"
+		showThirdInput = true
+		thirdLabel = "Score:"
+	case types.KeyTypeHash:
+		valueLabel = "Field:"
+		showThirdInput = true
+		thirdLabel = "Value:"
+	case types.KeyTypeStream:
+		valueLabel = "Field:"
+		showThirdInput = true
+		thirdLabel = "Value:"
+	case types.KeyTypeJSON:
+		valueLabel = "JSON Value:"
+	case types.KeyTypeHyperLogLog:
+		valueLabel = "Element:"
+	case types.KeyTypeBitmap:
+		valueLabel = "Offset:"
+	case types.KeyTypeGeo:
+		valueLabel = "Member:"
+		showThirdInput = true
+		thirdLabel = "Lon,Lat:"
+	}
+
+	b.WriteString(keyStyle.Render(valueLabel))
+	b.WriteString("\n")
+	b.WriteString(m.AddKeyInputs[1].View())
+	b.WriteString("\n\n")
+
+	if showThirdInput {
+		b.WriteString(keyStyle.Render(thirdLabel))
+		b.WriteString("\n")
+		b.WriteString(m.AddKeyInputs[2].View())
+		b.WriteString("\n\n")
+	}
+
+	b.WriteString(helpStyle.Render("tab:next  Ctrl+T:type  enter:save  esc:cancel"))
+
+	modalWidth := 50
+	if m.Width-10 < 50 {
+		modalWidth = m.Width - 10
+	}
+	modalStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("39")).
+		Padding(1, 2).
+		Width(modalWidth)
+
+	return lipgloss.Place(m.Width, m.Height, lipgloss.Center, lipgloss.Center, modalStyle.Render(b.String()))
+}
+
+func (m *Model) buildDetailLines() []string {
+	var vc strings.Builder
+
 	switch m.CurrentValue.Type {
 	case types.KeyTypeString:
 		vc.WriteString(formatPossibleJSON(m.CurrentValue.StringValue))
@@ -167,192 +392,6 @@ func (m Model) viewKeyDetail() string {
 		}
 	}
 
-	// Apply scrolling for long values
 	valueStr := strings.TrimSpace(vc.String())
-	valueLines := strings.Split(valueStr, "\n")
-	// Reserve lines for header (6) + border/padding (4) + help (2)
-	maxVisible := m.Height - 12
-	if maxVisible < 5 {
-		maxVisible = 5
-	}
-
-	if len(valueLines) > maxVisible {
-		if m.DetailScroll > len(valueLines)-maxVisible {
-			m.DetailScroll = len(valueLines) - maxVisible
-		}
-		if m.DetailScroll < 0 {
-			m.DetailScroll = 0
-		}
-		end := m.DetailScroll + maxVisible
-		if end > len(valueLines) {
-			end = len(valueLines)
-		}
-		visible := valueLines[m.DetailScroll:end]
-		var scrollInfo string
-		if m.DetailScroll > 0 {
-			scrollInfo += dimStyle.Render(fmt.Sprintf("↑ %d more lines above", m.DetailScroll))
-			scrollInfo += "\n"
-		}
-		scrollInfo += strings.Join(visible, "\n")
-		remaining := len(valueLines) - end
-		if remaining > 0 {
-			scrollInfo += "\n"
-			scrollInfo += dimStyle.Render(fmt.Sprintf("↓ %d more lines below", remaining))
-		}
-		valueStr = scrollInfo
-	}
-
-	b.WriteString(valueBox.Render(valueStr))
-	b.WriteString("\n\n")
-
-	helpText := "t:TTL  d:del  r:refresh  R:rename  c:copy"
-	switch m.CurrentKey.Type {
-	case types.KeyTypeString, types.KeyTypeJSON:
-		helpText += "  e:edit"
-	case types.KeyTypeHyperLogLog, types.KeyTypeBitmap:
-		helpText += "  a:add"
-	default:
-		helpText += "  a:add  x:remove"
-	}
-	helpText += "  esc:back"
-	b.WriteString(lipgloss.PlaceHorizontal(boxWidth, lipgloss.Center, helpStyle.Render(helpText)))
-
-
-	return b.String()
-}
-
-func (m Model) detailContentLines() int {
-	return strings.Count(m.detailValueString(), "\n") + 1
-}
-
-func (m Model) detailValueString() string {
-	var vc strings.Builder
-	switch m.CurrentValue.Type {
-	case types.KeyTypeString:
-		vc.WriteString(formatPossibleJSON(m.CurrentValue.StringValue))
-	case types.KeyTypeList:
-		for i, v := range m.CurrentValue.ListValue {
-			fmt.Fprintf(&vc, "%d. %s\n", i, v)
-		}
-	case types.KeyTypeSet:
-		for _, v := range m.CurrentValue.SetValue {
-			fmt.Fprintf(&vc, "• %s\n", v)
-		}
-	case types.KeyTypeZSet:
-		for _, v := range m.CurrentValue.ZSetValue {
-			fmt.Fprintf(&vc, "%.2f: %s\n", v.Score, v.Member)
-		}
-	case types.KeyTypeHash:
-		for k, v := range m.CurrentValue.HashValue {
-			fmt.Fprintf(&vc, "%s: %s\n", k, v)
-		}
-	case types.KeyTypeStream:
-		for _, e := range m.CurrentValue.StreamValue {
-			fmt.Fprintf(&vc, "%s\n", e.ID)
-		}
-	case types.KeyTypeJSON:
-		vc.WriteString(formatPossibleJSON(m.CurrentValue.JSONValue))
-	case types.KeyTypeHyperLogLog:
-		fmt.Fprintf(&vc, "Estimated cardinality: %d", m.CurrentValue.HLLCount)
-	case types.KeyTypeBitmap:
-		fmt.Fprintf(&vc, "Bit count: %d\n", m.CurrentValue.BitCount)
-		for _, pos := range m.CurrentValue.BitPositions {
-			fmt.Fprintf(&vc, "  bit %d = 1\n", pos)
-		}
-	case types.KeyTypeGeo:
-		for _, g := range m.CurrentValue.GeoValue {
-			fmt.Fprintf(&vc, "%s  (%.6f, %.6f)\n", g.Name, g.Longitude, g.Latitude)
-		}
-	}
-	return strings.TrimSpace(vc.String())
-}
-
-func (m Model) detailMaxScroll() int {
-	maxVisible := m.Height - 12
-	if maxVisible < 5 {
-		maxVisible = 5
-	}
-	totalLines := m.detailContentLines()
-	maxScroll := totalLines - maxVisible
-	if maxScroll < 0 {
-		return 0
-	}
-	return maxScroll
-}
-
-func (m Model) viewAddKey() string {
-	var b strings.Builder
-
-	b.WriteString(titleStyle.Render("Add Key"))
-	b.WriteString("\n\n")
-
-	b.WriteString(keyStyle.Render("Type: "))
-	b.WriteString(getTypeStyleBold(m.AddKeyType).Render(string(m.AddKeyType)))
-	b.WriteString(dimStyle.Render(" (Ctrl+T to change)"))
-	b.WriteString("\n\n")
-
-	b.WriteString(keyStyle.Render("Key Name:"))
-	b.WriteString("\n")
-	b.WriteString(m.AddKeyInputs[0].View())
-	b.WriteString("\n\n")
-
-	// Determine labels and whether to show the third input based on type
-	valueLabel := "Value:"
-	showThirdInput := false
-	thirdLabel := ""
-
-	switch m.AddKeyType {
-	case types.KeyTypeList:
-		valueLabel = "Element:"
-	case types.KeyTypeSet:
-		valueLabel = "Member:"
-	case types.KeyTypeZSet:
-		valueLabel = "Member:"
-		showThirdInput = true
-		thirdLabel = "Score:"
-	case types.KeyTypeHash:
-		valueLabel = "Field:"
-		showThirdInput = true
-		thirdLabel = "Value:"
-	case types.KeyTypeStream:
-		valueLabel = "Field:"
-		showThirdInput = true
-		thirdLabel = "Value:"
-	case types.KeyTypeJSON:
-		valueLabel = "JSON Value:"
-	case types.KeyTypeHyperLogLog:
-		valueLabel = "Element:"
-	case types.KeyTypeBitmap:
-		valueLabel = "Offset:"
-	case types.KeyTypeGeo:
-		valueLabel = "Member:"
-		showThirdInput = true
-		thirdLabel = "Lon,Lat:"
-	}
-
-	b.WriteString(keyStyle.Render(valueLabel))
-	b.WriteString("\n")
-	b.WriteString(m.AddKeyInputs[1].View())
-	b.WriteString("\n\n")
-
-	if showThirdInput {
-		b.WriteString(keyStyle.Render(thirdLabel))
-		b.WriteString("\n")
-		b.WriteString(m.AddKeyInputs[2].View())
-		b.WriteString("\n\n")
-	}
-
-	b.WriteString(helpStyle.Render("tab:next  Ctrl+T:type  enter:save  esc:cancel"))
-
-	modalWidth := 50
-	if m.Width-10 < 50 {
-		modalWidth = m.Width - 10
-	}
-	modalStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("39")).
-		Padding(1, 2).
-		Width(modalWidth)
-
-	return lipgloss.Place(m.Width, m.Height, lipgloss.Center, lipgloss.Center, modalStyle.Render(b.String()))
+	return strings.Split(valueStr, "\n")
 }

@@ -318,7 +318,43 @@ func (m *Model) sortKeys() {
 }
 
 func (m Model) handleKeyDetailScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.DetailSearchInput.Focused() {
+		switch msg.String() {
+		case "enter":
+			m.DetailSearchTerm = m.DetailSearchInput.Value()
+			m.DetailSearchInput.Blur()
+			m.executeDetailSearch()
+			return m, nil
+		case "esc":
+			m.DetailSearchInput.Blur()
+			m.DetailSearchInput.SetValue("")
+			m.DetailSearchTerm = ""
+			m.DetailMatchLines = nil
+			return m, nil
+		default:
+			var cmd tea.Cmd
+			m.DetailSearchInput, cmd = m.DetailSearchInput.Update(msg)
+			return m, cmd
+		}
+	}
+
 	switch msg.String() {
+	case "/":
+		m.DetailSearchInput.Focus()
+		return m, nil
+	case "n":
+		if len(m.DetailMatchLines) > 0 {
+			m.DetailMatchIdx = (m.DetailMatchIdx + 1) % len(m.DetailMatchLines)
+			m.scrollToMatch()
+		}
+	case "N":
+		if len(m.DetailMatchLines) > 0 {
+			m.DetailMatchIdx--
+			if m.DetailMatchIdx < 0 {
+				m.DetailMatchIdx = len(m.DetailMatchLines) - 1
+			}
+			m.scrollToMatch()
+		}
 	case "d", "delete":
 		if m.CurrentKey != nil {
 			m.ConfirmType = "key"
@@ -472,5 +508,48 @@ func (m Model) getCollectionLength() int {
 		return 0
 	default:
 		return 0
+	}
+}
+
+func (m *Model) executeDetailSearch() {
+	m.DetailMatchLines = nil
+	m.DetailMatchIdx = 0
+
+	if m.DetailSearchTerm == "" || m.CurrentKey == nil {
+		return
+	}
+
+	searchTerm := strings.ToLower(m.DetailSearchTerm)
+	lines := strings.Split(m.detailValueString(), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(strings.ToLower(line), searchTerm) {
+			m.DetailMatchLines = append(m.DetailMatchLines, i)
+		}
+	}
+
+	m.scrollToMatch()
+}
+
+func (m *Model) scrollToMatch() {
+	if len(m.DetailMatchLines) == 0 {
+		return
+	}
+
+	targetLine := m.DetailMatchLines[m.DetailMatchIdx]
+	maxVisible := m.Height - 12
+	if maxVisible < 5 {
+		maxVisible = 5
+	}
+
+	m.DetailScroll = targetLine - (maxVisible / 2)
+
+	if m.DetailScroll < 0 {
+		m.DetailScroll = 0
+	}
+
+	maxScroll := m.detailMaxScroll()
+	if m.DetailScroll > maxScroll {
+		m.DetailScroll = maxScroll
 	}
 }

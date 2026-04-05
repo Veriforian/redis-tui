@@ -13,40 +13,42 @@ import (
 )
 
 type Model struct {
-	Cmds              *cmd.Commands
-	ScanSize          int64
-	Version           string
-	Screen            types.Screen
-	Connections       []types.Connection
-	SelectedConnIdx   int
-	ConnInputs        []textinput.Model
-	ConnFocusIdx      int
-	EditingConnection *types.Connection
-	CurrentConn       *types.Connection
-	Keys              []types.RedisKey
-	SelectedKeyIdx    int
-	KeyCursor         uint64
-	KeyPattern        string
-	PatternInput      textinput.Model
-	SearchSeq         int
-	CurrentKey        *types.RedisKey
-	CurrentValue      types.RedisValue
-	AddKeyInputs      []textinput.Model
-	AddKeyFocusIdx    int
-	AddKeyType        types.KeyType
-	TTLInput          textinput.Model
-	ServerInfo        types.ServerInfo
-	TotalKeys         int64
-	Width             int
-	Height            int
-	Err               error
-	StatusMsg         string
-	Loading           bool
-	ConfirmType       string
-	ConfirmData       any
-	Logs              *types.LogWriter
-	SendFunc          *func(tea.Msg)
-	PendingSelectKey  string
+	Cmds                       *cmd.Commands
+	ScanSize                   int64
+	Version                    string
+	Screen                     types.Screen
+	Connections                []types.Connection
+	SelectedConnIdx            int
+	ConnInputs                 []textinput.Model
+	ConnFocusIdx               int
+	EditingConnection          *types.Connection
+	CurrentConn                *types.Connection
+	Keys                       []types.RedisKey
+	SelectedKeyIdx             int
+	KeyCursor                  uint64
+	KeyPattern                 string
+	PatternInput               textinput.Model
+	SearchSeq                  int
+	CurrentKey                 *types.RedisKey
+	CurrentValue               types.RedisValue
+	DetailValueLines           []string
+	ShouldColorizeCurrentValue bool
+	AddKeyInputs               []textinput.Model
+	AddKeyFocusIdx             int
+	AddKeyType                 types.KeyType
+	TTLInput                   textinput.Model
+	ServerInfo                 types.ServerInfo
+	TotalKeys                  int64
+	Width                      int
+	Height                     int
+	Err                        error
+	StatusMsg                  string
+	Loading                    bool
+	ConfirmType                string
+	ConfirmData                any
+	Logs                       *types.LogWriter
+	SendFunc                   *func(tea.Msg)
+	PendingSelectKey           string
 
 	// New fields for additional features
 	VimEditor          vimtea.Editor
@@ -75,6 +77,12 @@ type Model struct {
 	TestConnResult     string
 	LogCursor          int
 	ShowingLogDetail   bool
+
+	// Detail View Search
+	DetailSearchInput textinput.Model
+	DetailSearchTerm  string
+	DetailMatchLines  []int
+	DetailMatchIdx    int
 
 	// Favorites and recent keys
 	Favorites         []types.Favorite
@@ -227,6 +235,7 @@ func NewModel() Model {
 		CompareKey2Input:   createTextInput("Second key", 40),
 		JSONPathInput:      createTextInput("JSONPath expression (e.g., $.name)", 40),
 		ConfigEditInput:    createTextInput("New value", 50),
+		DetailSearchInput:  createTextInput("Search value (/)", 40),
 		inputsInitialized:  true,
 	}
 }
@@ -370,6 +379,10 @@ func (m Model) getDB() int {
 		return 0
 	}
 	return db
+}
+
+func (m *Model) setShouldColorizeCurrentValue(shouldColorize bool) {
+	m.ShouldColorizeCurrentValue = shouldColorize
 }
 
 func (m *Model) resetConnInputs() {

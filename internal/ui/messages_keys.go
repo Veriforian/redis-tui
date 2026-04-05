@@ -40,6 +40,7 @@ func (m Model) handleKeyValueLoadedMsg(msg types.KeyValueLoadedMsg) (tea.Model, 
 		m.StatusMsg = "Error: " + msg.Err.Error()
 	} else {
 		m.CurrentValue = msg.Value
+		m.DetailValueLines = m.buildDetailLines()
 		m.DetailScroll = 0
 		// On-demand type resolution: fill in type if it was not fetched during scan,
 		// or update when GetValue detected a subtype (e.g. string→hyperloglog)
