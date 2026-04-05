@@ -241,6 +241,66 @@ func TestConnect(t *testing.T) {
 		}
 	})
 
+	t.Run("success TLS", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		conn := types.Connection{
+			Host:   "localhost",
+			Port:   6380,
+			UseTLS: true,
+			TLSConfig: &types.TLSConfig{
+				InsecureSkipVerify: true,
+			},
+		}
+		msg := cmds.Connect(&conn)()
+		result := msg.(types.ConnectedMsg)
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
+		}
+		if !mock.UsedTLS {
+			t.Errorf("expected UseTLS , got %v", mock.UsedTLS)
+		}
+	})
+
+	t.Run("success cluster mode", func(t *testing.T) {
+		cmds, _ := newMockCmds()
+		msg := cmds.Connect(&types.Connection{Name: "test", Host: "localhost", Port: 7000, UseCluster: true})()
+		result := msg.(types.ConnectedMsg)
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
+		}
+	})
+
+	t.Run("TLS without config returns error", func(t *testing.T) {
+		cmds, _ := newMockCmds()
+		conn := types.Connection{Host: "localhost", Port: 6379, UseTLS: true}
+		msg := cmds.Connect(&conn)()
+		result := msg.(types.ConnectedMsg)
+		if result.Err == nil {
+			t.Error("expected error for TLS without config")
+		}
+		if result.Err.Error() != "TLS requested but TLS configuration is missing" {
+			t.Errorf("unexpected error message: %v", result.Err)
+		}
+	})
+
+	t.Run("TLS bad cert file", func(t *testing.T) {
+		cmds, _ := newMockCmds()
+		conn := types.Connection{
+			Host:   "localhost",
+			Port:   6380,
+			UseTLS: true,
+			TLSConfig: &types.TLSConfig{
+				CertFile: "/nonexistent/cert.pem",
+				KeyFile:  "/nonexistent/key.pem",
+			},
+		}
+		msg := cmds.Connect(&conn)()
+		result := msg.(types.ConnectedMsg)
+		if result.Err == nil {
+			t.Error("expected error for bad TLS cert file")
+		}
+	})
+
 	t.Run("error", func(t *testing.T) {
 		cmds, mock := newMockCmds()
 		mock.ConnectError = errors.New("connection refused")
@@ -251,12 +311,30 @@ func TestConnect(t *testing.T) {
 		}
 	})
 
-	t.Run("cluster mode", func(t *testing.T) {
-		cmds, _ := newMockCmds()
-		msg := cmds.Connect(&types.Connection{Name: "test", Host: "localhost", Port: 7000, UseCluster: true})()
+	t.Run("TLS connect error", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.ConnectWithTLSError = errors.New("TLS handshake failed")
+		conn := types.Connection{
+			Host:      "localhost",
+			Port:      6380,
+			UseTLS:    true,
+			TLSConfig: &types.TLSConfig{InsecureSkipVerify: true},
+		}
+		msg := cmds.Connect(&conn)()
 		result := msg.(types.ConnectedMsg)
-		if result.Err != nil {
-			t.Errorf("unexpected error: %v", result.Err)
+		if result.Err == nil {
+			t.Error("expected error")
+		}
+	})
+
+	t.Run("cluster error", func(t *testing.T) {
+		cmds, mock := newMockCmds()
+		mock.ConnectClusterError = errors.New("cluster unavailable")
+		conn := types.Connection{Host: "localhost", Port: 7000, UseCluster: true}
+		msg := cmds.Connect(&conn)()
+		result := msg.(types.ConnectedMsg)
+		if result.Err == nil {
+			t.Error("expected error")
 		}
 	})
 
