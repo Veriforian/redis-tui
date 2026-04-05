@@ -108,10 +108,10 @@ func (c *Connection) UnmarshalJSON(data []byte) error {
 
 // ConnectionGroup organizes connections
 type ConnectionGroup struct {
-	Name        string  `json:"name"`
-	Color       string  `json:"color,omitempty"`
-	Connections []int64 `json:"connections"`
-	Collapsed   bool    `json:"collapsed,omitempty"`
+	Name        string   `json:"name"`
+	Color       string   `json:"color,omitempty"`
+	Connections []string `json:"connections"`
+	Collapsed   bool     `json:"collapsed,omitempty"`
 }
 
 // Favorite stores a favorited key

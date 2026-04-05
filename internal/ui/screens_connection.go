@@ -82,7 +82,7 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		if m.ConnInputs[0].Value() != "" && m.ConnInputs[1].Value() != "" {
 			m.Loading = true
-			conn := m.convertCurrentInputsToConnection(m.ConnInputs)
+			conn := m.convertCurrentInputsToConnection(m.ConnInputs, "add")
 			return m, m.Cmds.AddConnection(
 				conn,
 			)
@@ -90,7 +90,7 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+t":
 		m.Loading = true
 		m.Screen = types.ScreenTestConnection
-		conn := m.convertCurrentInputsToConnection(m.ConnInputs)
+		conn := m.convertCurrentInputsToConnection(m.ConnInputs, "test")
 		return m, m.Cmds.TestConnection(
 			conn,
 		)
@@ -172,7 +172,7 @@ func (m Model) handleEditConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		if m.EditingConnection != nil && m.ConnInputs[0].Value() != "" && m.ConnInputs[1].Value() != "" {
 			m.Loading = true
-			conn := m.convertCurrentInputsToConnection(m.ConnInputs)
+			conn := m.convertCurrentInputsToConnection(m.ConnInputs, "edit")
 			return m, m.Cmds.UpdateConnection(
 				conn,
 			)

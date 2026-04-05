@@ -245,58 +245,43 @@ func (c *Config) ListConnections() ([]types.Connection, error) {
 	return result, nil
 }
 
-func (c *Config) AddConnection(name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
+func (c *Config) AddConnection(conn types.Connection) (types.Connection, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	now := time.Now()
-	conn := types.Connection{
-		Name:       name,
-		Host:       host,
-		Port:       port,
-		Password:   password,
-		Username:   username,
-		DB:         db,
-		UseCluster: useCluster,
-		Created:    now,
-		Updated:    now,
-	}
-	c.nextID++
 
 	c.Connections = append(c.Connections, conn)
 
 	if err := c.save(); err != nil {
 		c.Connections = c.Connections[:len(c.Connections)-1]
-		c.nextID--
 		return types.Connection{}, err
 	}
 
 	return conn, nil
 }
 
-func (c *Config) UpdateConnection(id string, name, host string, port int, password string, username string, db int, useCluster bool) (types.Connection, error) {
+func (c *Config) UpdateConnection(conn types.Connection) (types.Connection, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for i, conn := range c.Connections {
-		if conn.ID == id {
+	for i, toUpdateConn := range c.Connections {
+		if toUpdateConn.ID == conn.ID {
 			now := time.Now()
 			updatedConn := types.Connection{
-				ID:         id,
-				Name:       name,
-				Host:       host,
-				Port:       port,
-				Password:   password,
-				Username:   username,
-				DB:         db,
-				Group:      conn.Group,
-				Color:      conn.Color,
-				UseSSH:     conn.UseSSH,
-				SSHConfig:  conn.SSHConfig,
-				UseTLS:     conn.UseTLS,
-				TLSConfig:  conn.TLSConfig,
-				UseCluster: useCluster,
-				Created:    conn.Created,
+				ID:         conn.ID,
+				Name:       conn.Name,
+				Host:       conn.Host,
+				Port:       conn.Port,
+				Password:   conn.Password,
+				Username:   conn.Username,
+				DB:         conn.DB,
+				UseCluster: conn.UseCluster,
+				Group:      toUpdateConn.Group,
+				Color:      toUpdateConn.Color,
+				UseSSH:     toUpdateConn.UseSSH,
+				SSHConfig:  toUpdateConn.SSHConfig,
+				UseTLS:     toUpdateConn.UseTLS,
+				TLSConfig:  toUpdateConn.TLSConfig,
+				Created:    toUpdateConn.Created,
 				Updated:    now,
 			}
 
@@ -403,7 +388,6 @@ func (c *Config) IsFavorite(connID string, key string) bool {
 }
 
 // Recent keys management
-
 func (c *Config) AddRecentKey(connID string, key string, keyType types.KeyType) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -554,14 +538,14 @@ func (c *Config) AddGroup(name, color string) error {
 	group := types.ConnectionGroup{
 		Name:        name,
 		Color:       color,
-		Connections: []int64{},
+		Connections: []string{},
 	}
 
 	c.Groups = append(c.Groups, group)
 	return c.save()
 }
 
-func (c *Config) AddConnectionToGroup(groupName string, connID int64) error {
+func (c *Config) AddConnectionToGroup(groupName string, connID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -580,7 +564,7 @@ func (c *Config) AddConnectionToGroup(groupName string, connID int64) error {
 	return os.ErrNotExist
 }
 
-func (c *Config) RemoveConnectionFromGroup(groupName string, connID int64) error {
+func (c *Config) RemoveConnectionFromGroup(groupName string, connID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

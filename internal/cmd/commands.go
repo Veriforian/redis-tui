@@ -58,7 +58,7 @@ func (c *Commands) LoadConnections() tea.Cmd {
 	}
 }
 
-func (c *Commands) AddConnection(conn *types.Connection) tea.Cmd {
+func (c *Commands) AddConnection(conn types.Connection) tea.Cmd {
 	return func() tea.Msg {
 		if c.config == nil {
 			return types.ConnectionAddedMsg{Err: nil}
@@ -71,13 +71,14 @@ func (c *Commands) AddConnection(conn *types.Connection) tea.Cmd {
 	}
 }
 
-func (c *Commands) UpdateConnection(conn *types.Connection) tea.Cmd {
+func (c *Commands) UpdateConnection(conn types.Connection) tea.Cmd {
 	return func() tea.Msg {
 		if c.config == nil {
 			return types.ConnectionUpdatedMsg{Err: nil}
 		}
 		conn, err := c.config.UpdateConnection(conn)
 		if err != nil {
+			fmt.Println(err)
 			slog.Error("Failed to update connection", "error", err)
 		}
 		return types.ConnectionUpdatedMsg{Connection: conn, Err: err}
@@ -637,12 +638,12 @@ func (c *Commands) ImportKeys(filename string) tea.Cmd {
 	}
 }
 
-func (c *Commands) TestConnection(conn *types.Connection) tea.Cmd {
+func (c *Commands) TestConnection(conn types.Connection) tea.Cmd {
 	return func() tea.Msg {
 		if c.redis == nil {
 			return types.ConnectionTestMsg{Success: false, Err: nil}
 		}
-		latency, err := c.redis.TestConnection(conn)
+		latency, err := c.redis.TestConnection(&conn)
 		return types.ConnectionTestMsg{Success: err == nil, Latency: latency, Err: err}
 	}
 }

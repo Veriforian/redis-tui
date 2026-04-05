@@ -46,7 +46,15 @@ fmt:
 
 ## Run the application
 run:
-	go run ./
+	go run ./ 
+
+## Start headless debugger for TUI
+debug-server:
+	go build -gcflags="all=-N -l" -o bin/$(APP_NAME)-debug ./
+	-dlv exec ./bin/$(APP_NAME)-debug --headless --listen=127.0.0.1:38697 --api-version=2
+	@printf "\033[?1049l\033[?25h"
+	@stty sane
+	@reset
 
 ## Build for multiple platforms
 build-all:

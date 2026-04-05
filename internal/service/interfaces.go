@@ -12,8 +12,8 @@ import (
 type ConfigService interface {
 	// Connection management
 	ListConnections() ([]types.Connection, error)
-	AddConnection(conn *types.Connection) (types.Connection, error)
-	UpdateConnection(conn *types.Connection) (types.Connection, error)
+	AddConnection(conn types.Connection) (types.Connection, error)
+	UpdateConnection(conn types.Connection) (types.Connection, error)
 	DeleteConnection(id string) error
 
 	// Favorites management
@@ -59,7 +59,6 @@ type ConfigService interface {
 type RedisService interface {
 	// Connection management
 	Connect(conn *types.Connection) error
-	ConnectWithTLS(conn *types.Connection) error
 	ConnectCluster(addrs []string, username string, password string) error
 	Disconnect() error
 	IsCluster() bool
