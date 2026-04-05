@@ -55,7 +55,7 @@ func TestNewConfig_CreatesDirectory(t *testing.T) {
 func TestConfig_AddConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, err := cfg.AddConnection("test", "localhost", 6379, "secret", 0, false)
+	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Password: "secret", DB: 0, UseCluster: false})
 	if err != nil {
 		t.Fatalf("AddConnection failed: %v", err)
 	}
@@ -86,9 +86,9 @@ func TestConfig_AddConnection(t *testing.T) {
 func TestConfig_AddConnection_IncrementingIDs(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn1, _ := cfg.AddConnection("test1", "localhost", 6379, "", 0, false)
-	conn2, _ := cfg.AddConnection("test2", "localhost", 6380, "", 0, false)
-	conn3, _ := cfg.AddConnection("test3", "localhost", 6381, "", 0, false)
+	conn1, _ := cfg.AddConnection(types.Connection{Name: "test1", Host: "localhost", Port: 6379, Password: "", DB: 0, UseCluster: false})
+	conn2, _ := cfg.AddConnection(types.Connection{Name: "test2", Host: "localhost", Port: 6380, Password: "", DB: 0, UseCluster: false})
+	conn3, _ := cfg.AddConnection(types.Connection{Name: "test3", Host: "localhost", Port: 6381, Password: "", DB: 0, UseCluster: false})
 
 	if conn2.ID <= conn1.ID {
 		t.Errorf("conn2.ID (%d) should be greater than conn1.ID (%d)", conn2.ID, conn1.ID)
@@ -102,9 +102,9 @@ func TestConfig_ListConnections(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Add connections in non-alphabetical order
-	cfg.AddConnection("zebra", "localhost", 6379, "", 0, false)
-	cfg.AddConnection("alpha", "localhost", 6380, "", 0, false)
-	cfg.AddConnection("beta", "localhost", 6381, "", 0, false)
+	cfg.AddConnection(types.Connection{Name: "zebra", Host: "localhost", Port: 6379, Password: "", DB: 0, UseCluster: false})
+	cfg.AddConnection(types.Connection{Name: "alpha", Host: "localhost", Port: 6380, Password: "", DB: 0, UseCluster: false})
+	cfg.AddConnection(types.Connection{Name: "beta", Host: "localhost", Port: 6381, Password: "", DB: 0, UseCluster: false})
 
 	connections, err := cfg.ListConnections()
 	if err != nil {
@@ -130,10 +130,15 @@ func TestConfig_ListConnections(t *testing.T) {
 func TestConfig_UpdateConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection("original", "localhost", 6379, "old", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "original", Host: "localhost", Port: 6379, Password: "old", DB: 0, UseCluster: false})
 	originalCreated := conn.Created
+	conn.Name = "updated"
+	conn.Host = "newhost"
+	conn.Port = 6380
+	conn.Password = "new"
+	conn.DB = 1
 
-	updated, err := cfg.UpdateConnection(conn.ID, "updated", "newhost", 6380, "new", 1, false)
+	updated, err := cfg.UpdateConnection(conn)
 	if err != nil {
 		t.Fatalf("UpdateConnection failed: %v", err)
 	}
@@ -164,7 +169,7 @@ func TestConfig_UpdateConnection(t *testing.T) {
 func TestConfig_UpdateConnection_NotFound(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	_, err := cfg.UpdateConnection(999, "test", "localhost", 6379, "", 0, false)
+	_, err := cfg.UpdateConnection(types.Connection{ID: 999, Name: "test", Host: "localhost", Port: 6379, Password: "", DB: 0, UseCluster: false})
 	if !os.IsNotExist(err) {
 		t.Errorf("Expected os.ErrNotExist, got %v", err)
 	}
@@ -173,7 +178,7 @@ func TestConfig_UpdateConnection_NotFound(t *testing.T) {
 func TestConfig_DeleteConnection(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	conn, _ := cfg.AddConnection("test", "localhost", 6379, "", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Password: "", DB: 0, UseCluster: false})
 
 	err := cfg.DeleteConnection(conn.ID)
 	if err != nil {
@@ -376,7 +381,7 @@ func TestConfig_Persistence(t *testing.T) {
 
 	// Create config and add data
 	cfg1, _ := NewConfig(path)
-	cfg1.AddConnection("test", "localhost", 6379, "pass", 0, false)
+	cfg1.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Password: "pass", DB: 0, UseCluster: false})
 	cfg1.AddFavorite(1, "key1", "label")
 
 	// Create new config from same file
@@ -473,7 +478,7 @@ func TestConfig_Groups(t *testing.T) {
 	}
 
 	// Add connection to group
-	conn, _ := cfg.AddConnection("test", "localhost", 6379, "", 0, false)
+	conn, _ := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, Password: "", DB: 0, UseCluster: false})
 	err = cfg.AddConnectionToGroup("Production", conn.ID)
 	if err != nil {
 		t.Fatalf("AddConnectionToGroup failed: %v", err)
