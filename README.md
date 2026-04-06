@@ -479,9 +479,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Run tests before committing: `go test -v -race ./...`
+4. Commit your changes using [conventional commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Before submitting
+
+- All tests must pass with the race detector: `go test -v -race ./...`
+- Run `make lint` and `make fmt`
+- Never suppress errors in tests — every error return must be checked
+- Config changes must include persistence round-trip tests (add data, reload from disk, assert fields survived)
+- See [CLAUDE.md](CLAUDE.md) for code conventions, architecture, and guardrails
 
 ## Acknowledgments
 

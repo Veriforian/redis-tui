@@ -54,6 +54,17 @@ internal/
 - Generic assertion helpers: `AssertEqual[T]`, `AssertNoError`, `AssertError`
 - Test files live alongside source files (`*_test.go`)
 
+### Test rules
+
+- **Never suppress errors** — no `_, _ :=` or bare calls that return errors. Every error must be checked, even in test setup code. Use `t.Fatalf("... failed: %v", err)` for setup errors.
+- **Config persistence round-trip** — any new config feature must have a test that writes data, reloads from disk via `reloadConfig(t, cfg)`, and asserts every field survived the JSON round-trip. This catches broken JSON tags.
+- **Mocks simulate, never re-implement** — mock implementations should return configured values/errors. Never duplicate real business logic in mocks.
+
+### Test helpers (`internal/db/config_test.go`)
+
+- `newTestConfig(t)` — creates a temp-dir-backed config
+- `reloadConfig(t, cfg)` — creates a fresh `NewConfig` from the same file path, forcing a full JSON save/load cycle
+
 ## Key Dependencies
 
 - `charmbracelet/bubbletea` — TUI framework
@@ -75,6 +86,9 @@ internal/
 - Config schema changes in `internal/db/` must be backward-compatible with existing `~/.config/redis-tui/config.json` files
 - All new command methods must go through the `Commands` struct with injected services — no global state
 - New message types must follow the `Msg` suffix convention and be defined in the appropriate `messages_*.go` file
+- **JSON tags on `types.Connection`** — changing JSON tags (especially to `json:"-"`) will break persistence. Round-trip tests in `config_test.go` enforce this.
+- **Password stripping** — `save()` in `config.go` intentionally strips `Connection.Password`, `SSHConfig.Password`, and `SSHConfig.Passphrase` before writing to disk. This is a security invariant tested by `TestConfig_Persistence_PasswordStripping` and `TestConfig_Persistence_SSHPasswordStripping`. Never bypass this.
+- **`UpdateConnection` field preservation** — `UpdateConnection()` preserves `Group`, `Color`, `UseSSH`, `SSHConfig`, `UseTLS`, `TLSConfig` from the existing connection. This is tested and must not regress.
 
 ## Release
 
