@@ -18,7 +18,7 @@ func TestConfig_Integration_FullConnectionLifecycle(t *testing.T) {
 	cfg := newTestConfig(t)
 
 	// Step 1: Add a connection with all features
-	conn, err := cfg.AddConnection(types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})
+	conn, err := cfg.AddConnection(types.Connection{Name: "prod", Host: "redis.example.com", Port: 6380, DB: 2, UseCluster: true})
 	if err != nil {
 		t.Fatalf("AddConnection failed: %v", err)
 	}
