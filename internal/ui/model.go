@@ -191,6 +191,15 @@ type Model struct {
 	inputsInitialized bool
 }
 
+type ActionType string
+
+const (
+	ActionAdd    ActionType = "add"
+	ActionEdit   ActionType = "edit"
+	ActionDelete ActionType = "delete"
+	ActionTest   ActionType = "test"
+)
+
 func NewModel() Model {
 	return Model{
 		Screen:             types.ScreenConnections,
@@ -385,7 +394,7 @@ func (m *Model) populateConnInputs(conn types.Connection) {
 }
 
 // convertCurrentInputsToConnection converts the current inputs to a connection
-func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, action string) types.Connection {
+func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, action ActionType) types.Connection {
 	var id int64
 	if action == "edit" && m.EditingConnection != nil {
 		id = m.EditingConnection.ID
