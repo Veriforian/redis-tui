@@ -50,8 +50,10 @@ run:
 
 ## Run the application in debug mode
 debug-server:
-	go build -gcflags="all=-N -l" -o bin/$(APP_NAME)-debug ./
-	-dlv exec ./bin/$(APP_NAME)-debug --headless --listen=127.0.0.1:38697 --api-version=2
+	@mkdir -p tmp || true
+	@-pkill -f "dlv.*38697" || true
+	go build -gcflags="all=-N -l" -o tmp/$(APP_NAME)-debug ./
+	go run github.com/go-delve/delve/cmd/dlv@latest exec ./tmp/$(APP_NAME)-debug --headless --listen=127.0.0.1:38697 --api-version=2
 	@printf "\033[?1049l\033[?25h"
 	@stty sane
 	@reset
@@ -75,6 +77,7 @@ snapshot:
 ## Install development dependencies
 dev-deps:
 	go install github.com/goreleaser/goreleaser/v2@v2.13.1
+	go install github.com/go-delve/delve/cmd/dlv@latest
 
 ## --- Docker Examples ---
 
