@@ -196,6 +196,15 @@ func TestConnect(t *testing.T) {
 			t.Errorf("nil redis should not error: %v", result.Err)
 		}
 	})
+
+	t.Run("nil conn", func(t *testing.T) {
+		cmds := NewCommands(nil, nil)
+		msg := cmds.Connect(nil)()
+		result := msg.(types.ConnectedMsg)
+		if result.Err != nil {
+			t.Errorf("nil redis should not error: %v", result.Err)
+		}
+	})
 }
 
 func TestDisconnect(t *testing.T) {
@@ -249,6 +258,15 @@ func TestTestConnection(t *testing.T) {
 	t.Run("nil redis", func(t *testing.T) {
 		cmds := NewCommands(nil, nil)
 		msg := cmds.TestConnection(&types.Connection{Name: "test", Host: "localhost", Port: 6379, DB: 0, UseCluster: false})()
+		result := msg.(types.ConnectionTestMsg)
+		if result.Err != nil {
+			t.Errorf("nil redis should not error: %v", result.Err)
+		}
+	})
+
+	t.Run("nil conn", func(t *testing.T) {
+		cmds := NewCommands(nil, nil)
+		msg := cmds.TestConnection(nil)()
 		result := msg.(types.ConnectionTestMsg)
 		if result.Err != nil {
 			t.Errorf("nil redis should not error: %v", result.Err)
