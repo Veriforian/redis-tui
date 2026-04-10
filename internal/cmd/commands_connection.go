@@ -63,6 +63,9 @@ func (c *Commands) Connect(conn *types.Connection) tea.Cmd {
 		if c.redis == nil {
 			return types.ConnectedMsg{Err: nil}
 		}
+		if conn == nil {
+			return types.ConnectedMsg{Err: fmt.Errorf("connection is nil")}
+		}
 		var err error
 		if conn.UseCluster {
 			err = c.redis.ConnectCluster([]string{fmt.Sprintf("%s:%d", conn.Host, conn.Port)}, conn)
@@ -90,6 +93,10 @@ func (c *Commands) TestConnection(conn *types.Connection) tea.Cmd {
 		if c.redis == nil {
 			return types.ConnectionTestMsg{Success: false, Err: nil}
 		}
+		if conn == nil {
+			return types.ConnectionTestMsg{Success: false, Err: fmt.Errorf("connection is nil")}
+		}
+
 		latency, err := c.redis.TestConnection(conn)
 		return types.ConnectionTestMsg{Success: err == nil, Latency: latency, Err: err}
 	}
