@@ -390,13 +390,16 @@ func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, actio
 	if action == "edit" && m.EditingConnection != nil {
 		id = m.EditingConnection.ID
 	}
+
+	port, _ := strconv.Atoi(inputs[2].Value())
+	db, _ := strconv.Atoi(inputs[4].Value())
 	return types.Connection{
 		ID:         id,
 		Name:       inputs[0].Value(),
+		Port:       port,
 		Host:       inputs[1].Value(),
-		Port:       m.getPort(),
 		Password:   inputs[3].Value(),
-		DB:         m.getDB(),
+		DB:         db,
 		UseCluster: m.ConnClusterMode,
 	}
 }
