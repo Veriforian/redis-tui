@@ -1,6 +1,8 @@
 .DS_Store
 .vscode
 
+/tmp
+
 # Compiled binary
 /dist
 /redis-tui
