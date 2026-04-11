@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -13,6 +14,25 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// clipboardCmd returns the command name and args for the platform's clipboard
+// utility. Returns ("", nil) if none is available.
+func clipboardCmd() (string, []string) {
+	switch runtime.GOOS {
+	case "darwin":
+		return "pbcopy", nil
+	case "windows":
+		return "clip", nil
+	default: // linux, freebsd, etc.
+		if path, err := exec.LookPath("xclip"); err == nil {
+			return path, []string{"-selection", "clipboard"}
+		}
+		if path, err := exec.LookPath("xsel"); err == nil {
+			return path, []string{"--clipboard", "--input"}
+		}
+		return "", nil
+	}
+}
 
 func (c *Commands) CheckVersion(currentVersion string) tea.Cmd {
 	return func() tea.Msg {
@@ -46,7 +66,11 @@ func (c *Commands) WatchKeyTick() tea.Cmd {
 
 func (c *Commands) CopyToClipboard(content string) tea.Cmd {
 	return func() tea.Msg {
-		cmd := exec.Command("pbcopy")
+		name, args := clipboardCmd()
+		if name == "" {
+			return types.ClipboardCopiedMsg{Content: content, Err: fmt.Errorf("no clipboard utility found (install pbcopy, xclip, or xsel)")}
+		}
+		cmd := exec.Command(name, args...)
 		cmd.Stdin = strings.NewReader(content)
 		err := cmd.Run()
 		return types.ClipboardCopiedMsg{Content: content, Err: err}

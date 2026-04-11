@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -223,12 +224,24 @@ func TestCopyToClipboard(t *testing.T) {
 		if cmd == nil {
 			t.Fatal("expected non-nil cmd from CopyToClipboard")
 		}
-		// Execute the command - it may fail in CI if pbcopy is not available
+		// Execute the command - it may fail in CI if clipboard util is not available
 		msg := cmd()
 		result := msg.(types.ClipboardCopiedMsg)
 		if result.Content != "test content" {
 			t.Errorf("Content = %q, want %q", result.Content, "test content")
 		}
-		// Note: result.Err may be non-nil if pbcopy is unavailable (e.g. in CI)
+		// Note: result.Err may be non-nil if clipboard util is unavailable (e.g. in CI)
 	})
+}
+
+func TestClipboardCmd(t *testing.T) {
+	name, _ := clipboardCmd()
+	// On any supported platform, clipboardCmd should return a non-empty command.
+	// This test just verifies it doesn't panic and returns something plausible.
+	if runtime.GOOS == "darwin" && name != "pbcopy" {
+		t.Errorf("expected pbcopy on darwin, got %q", name)
+	}
+	if runtime.GOOS == "windows" && name != "clip" {
+		t.Errorf("expected clip on windows, got %q", name)
+	}
 }
