@@ -8,3 +8,5 @@ bin/
 /seed
 
 redis.test
+coverage.out
+coverage.html
