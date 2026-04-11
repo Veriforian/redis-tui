@@ -30,7 +30,7 @@ type FileStore struct {
 	mu   sync.RWMutex
 }
 
-func Name() string {
+func (s *FileStore) Name() string {
 	return "Encrypted_File"
 }
 
@@ -132,6 +132,12 @@ func NewFileStore(path string, password []byte) (*FileStore, error) {
 			return nil, fmt.Errorf("failed to generate salt: %w", err)
 		}
 		store.deriveKey(password)
+
+		// Create the file to ensure write permissions, otherwise fail fast.
+		emptyVault := &vault{Credentials: make(map[string]map[string][]byte)}
+		if err := store.save(emptyVault); err != nil {
+			return nil, fmt.Errorf("failed to initialize vault file: %w", err)
+		}
 		return store, nil
 	}
 

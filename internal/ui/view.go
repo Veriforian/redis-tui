@@ -97,6 +97,8 @@ func (m Model) getScreenView() string {
 		return m.viewPubSubChannels()
 	case types.ScreenRedisConfig:
 		return m.viewRedisConfig()
+	case types.ScreenMasterPassword:
+		return m.viewMasterPassword()
 	default:
 		return ""
 	}
@@ -143,6 +145,9 @@ func (m Model) getStatusBar() string {
 	if m.StatusMsg != "" {
 		if strings.HasPrefix(m.StatusMsg, "Error") {
 			return errorStyle.Render(m.StatusMsg)
+		}
+		if strings.HasPrefix(m.StatusMsg, "Warning") {
+			return warningStyle.Render(m.StatusMsg)
 		}
 		return successStyle.Render(m.StatusMsg)
 	}

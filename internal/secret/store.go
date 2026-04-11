@@ -30,6 +30,23 @@ func (c *ChainStore) Name() string {
 	return "Chain"
 }
 
+// AddProvider dynamically appends a new store to the fallback chain
+func (c *ChainStore) AddProvider(p service.StoreService) {
+	c.providers = append(c.providers, p)
+}
+
+// IsAvailable performs a dummy write/delete to verify if at least one provider is operational.
+func (c *ChainStore) IsAvailable() bool {
+	testSvs := "redis-tui-sys"
+	testUsr := "availability-check"
+
+	if err := c.Set(testSvs, testUsr, []byte("test")); err != nil {
+		return false
+	}
+	_ = c.Delete(testSvs, testUsr)
+	return true
+}
+
 // Get iterates through the providers. It returns the first successful found secret.
 func (c *ChainStore) Get(service, user string) ([]byte, error) {
 	for _, p := range c.providers {
