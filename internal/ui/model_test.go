@@ -107,7 +107,7 @@ func TestModel_GetDB(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := NewModel()
-			m.ConnInputs[4].SetValue(tt.value)
+			m.ConnInputs[5].SetValue(tt.value)
 
 			got := m.getDB()
 			if got != tt.expected {
