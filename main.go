@@ -204,17 +204,31 @@ func initConfig() (*db.Config, error) {
 
 	configPath := filepath.Join(configDir, "config.json")
 
-	// Migrate from legacy config path (~/.redis/config.json) if new config doesn't exist
+	// Migrate from legacy config path (~/.redis/config.json) if new config doesn't exist.
+	// Parse through NewConfig+save() instead of raw byte copy so the JSON is
+	// validated and passwords are stripped before writing to the new location.
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		legacyPath := filepath.Join(homeDir, ".redis", "config.json")
-		if _, legacyStatErr := os.Stat(legacyPath); legacyStatErr == nil {
-			legacyData, readErr := os.ReadFile(legacyPath) // #nosec G304 -- path is constructed from homeDir + hardcoded strings
-			if readErr != nil {
-				slog.Warn("Failed to read legacy config for migration", "path", legacyPath, "error", readErr)
-			} else if writeErr := os.WriteFile(configPath, legacyData, 0o600); writeErr != nil { // #nosec G703 -- path is constructed from homeDir + hardcoded strings
-				slog.Warn("Failed to write migrated config", "from", legacyPath, "to", configPath, "error", writeErr)
+		if info, legacyStatErr := os.Stat(legacyPath); legacyStatErr == nil {
+			// Refuse to migrate files writable by others (mode & 0o022).
+			if info.Mode().Perm()&0o022 != 0 {
+				slog.Warn("Legacy config has unsafe permissions, skipping migration", "path", legacyPath, "mode", info.Mode().Perm())
 			} else {
-				slog.Info("Migrated config from legacy path", "from", legacyPath, "to", configPath)
+				legacyCfg, loadErr := db.NewConfig(legacyPath)
+				if loadErr != nil {
+					slog.Warn("Failed to parse legacy config for migration", "path", legacyPath, "error", loadErr)
+				} else {
+					_ = legacyCfg.Close()
+					// Re-read the validated, password-stripped output that NewConfig wrote.
+					validatedData, readErr := os.ReadFile(legacyPath) // #nosec G304 -- path from homeDir + hardcoded strings
+					if readErr != nil {
+						slog.Warn("Failed to read validated legacy config", "path", legacyPath, "error", readErr)
+					} else if writeErr := os.WriteFile(configPath, validatedData, 0o600); writeErr != nil {
+						slog.Warn("Failed to write migrated config", "from", legacyPath, "to", configPath, "error", writeErr)
+					} else {
+						slog.Info("Migrated config from legacy path", "from", legacyPath, "to", configPath)
+					}
+				}
 			}
 		}
 	}
