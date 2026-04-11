@@ -66,7 +66,7 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.focusConnField()
 	case " ":
-		if m.ConnFocusIdx == 4 {
+		if m.ConnFocusIdx == 5 {
 			m.ConnClusterMode = !m.ConnClusterMode
 			// If cluster mode just turned on and we're past the DB field, adjust
 			if m.ConnClusterMode && m.ConnFocusIdx >= m.connFieldCount() {
@@ -76,7 +76,7 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m.updateConnInputs(msg)
 	case "enter":
-		if m.ConnFocusIdx == 4 {
+		if m.ConnFocusIdx == 5 {
 			m.ConnClusterMode = !m.ConnClusterMode
 			return m, nil
 		}
@@ -107,11 +107,11 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 // Indices 0-3 map directly to ConnInputs[0-3], index 4 is the cluster toggle (no input),
 // and index 5 maps to ConnInputs[4] (Database).
 func connInputIndex(focusIdx int) int {
-	if focusIdx <= 3 {
+	if focusIdx <= 4 {
 		return focusIdx
 	}
-	if focusIdx == 5 {
-		return 4 // Database input
+	if focusIdx == 6 {
+		return 5 // Database input
 	}
 	return -1 // cluster toggle, no text input
 }
@@ -157,7 +157,7 @@ func (m Model) handleEditConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.focusConnField()
 	case " ":
-		if m.ConnFocusIdx == 4 {
+		if m.ConnFocusIdx == 5 {
 			m.ConnClusterMode = !m.ConnClusterMode
 			if m.ConnClusterMode && m.ConnFocusIdx >= m.connFieldCount() {
 				m.ConnFocusIdx = m.connFieldCount() - 1
@@ -166,7 +166,7 @@ func (m Model) handleEditConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		return m.updateConnInputs(msg)
 	case "enter":
-		if m.ConnFocusIdx == 4 {
+		if m.ConnFocusIdx == 5 {
 			m.ConnClusterMode = !m.ConnClusterMode
 			return m, nil
 		}
