@@ -100,8 +100,8 @@ func (m Model) handleAddConnectionScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 // connInputIndex maps a ConnFocusIdx to the actual ConnInputs array index.
-// Indices 0-3 map directly to ConnInputs[0-3], index 4 is the cluster toggle (no input),
-// and index 5 maps to ConnInputs[4] (Database).
+// Indices 0-4 map directly to ConnInputs[0-4], index 5 is the cluster toggle (no input),
+// and index 6 maps to ConnInputs[5] (Database).
 func connInputIndex(focusIdx int) int {
 	if focusIdx <= 4 {
 		return focusIdx
