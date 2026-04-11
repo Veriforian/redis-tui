@@ -11,6 +11,7 @@ import (
 	"github.com/davidbudnick/redis-tui/internal/cmd"
 	"github.com/davidbudnick/redis-tui/internal/db"
 	"github.com/davidbudnick/redis-tui/internal/redis"
+	"github.com/davidbudnick/redis-tui/internal/secret"
 	"github.com/davidbudnick/redis-tui/internal/service"
 	"github.com/davidbudnick/redis-tui/internal/types"
 	"github.com/davidbudnick/redis-tui/internal/ui"
@@ -74,9 +75,11 @@ func setup() (ui.Model, error) {
 		return m, fmt.Errorf("failed to initialize config: %w", err)
 	}
 
+	// Set up dependency injection
+	secretStore := secret.NewChainStore(secret.NewKeyringStore(), secret.NewPassStore())
 	redisClient := redis.NewClient()
 	redisClient.SetIncludeTypes(cmd.GetIncludeTypes())
-	container := &service.Container{Config: config, Redis: redisClient}
+	container := &service.Container{Config: config, Redis: redisClient, Store: secretStore}
 	m.Cmds = cmd.NewCommandsFromContainer(container)
 	m.ScanSize = cmd.GetScanSize()
 	m.Version = version
