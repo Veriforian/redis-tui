@@ -190,6 +190,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Screen = types.ScreenKeyDetail
 		return m, nil
 
+	// SecretStore messages
+	case types.SecretStoreUnavailableMsg:
+		m.Loading = false
+		m.ConnectionError = "Secret store unavailable."
+		m.Screen = types.ScreenConnections
+		return m, m.Cmds.LoadConnections()
+	case types.SecretStoreAvailableMsg:
+		m.Loading = false
+		m.ConnectionError = ""
+		m.Screen = types.ScreenConnections
+		return m, m.Cmds.LoadConnections()
+	case types.RequireMasterPasswordMsg:
+		m.Loading = false
+		m.ConnectionError = ""
+		m.Screen = types.ScreenMasterPassword
+		return m, nil
+	case types.MasterPasswordErrorMsg:
+		m.Loading = false
+		m.ConnectionError = msg.Err.Error()
+		m.MasterPasswordInput.SetValue("")
+		m.MasterPasswordInput.Focus()
+		m.Screen = types.ScreenMasterPassword
+		return m, m.Cmds.LoadConnections()
+
 	default:
 		// Pass unhandled messages to vimtea editor if active
 		if m.Screen == types.ScreenEditValue && m.VimEditor != nil {
@@ -373,6 +397,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handlePubSubChannelsScreen(msg)
 	case types.ScreenRedisConfig:
 		return m.handleRedisConfigScreen(msg)
+	case types.ScreenMasterPassword:
+		return m.handleMasterPasswordScreen(msg)
 	}
 	return m, nil
 }

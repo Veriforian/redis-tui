@@ -70,13 +70,22 @@ func setup() (ui.Model, error) {
 	handler := slog.NewJSONHandler(logWriter, nil)
 	slog.SetDefault(slog.New(handler))
 
-	config, err := initConfig()
+	configDir, homeDir, err := setupDirs()
+	if err != nil {
+		log.Fatalf("Failed to initialize config dir: %v", err)
+	}
+
+	// Load config synchronously for now to ensure it's available for connection operations
+	config, err := initConfig(configDir, homeDir)
 	if err != nil {
 		return m, fmt.Errorf("failed to initialize config: %w", err)
 	}
 
+	m.ConfigDir = configDir
+
 	// Set up dependency injection
-	secretStore := secret.NewChainStore(secret.NewKeyringStore(), secret.NewPassStore())
+	// secretStore := secret.NewChainStore(secret.NewKeyringStore(), secret.NewPassStore())
+	secretStore := secret.NewChainStore()
 	redisClient := redis.NewClient()
 	redisClient.SetIncludeTypes(cmd.GetIncludeTypes())
 	container := &service.Container{Config: config, Redis: redisClient, Store: secretStore}
@@ -217,17 +226,21 @@ var (
 	osReadFile  = os.ReadFile
 )
 
-func initConfig() (*db.Config, error) {
-	homeDir, err := userHomeDir()
+func setupDirs() (string, string, error) {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		homeDir = os.TempDir()
 	}
 
 	configDir := filepath.Join(homeDir, ".config", "redis-tui")
 	if err := os.MkdirAll(configDir, 0o750); err != nil {
-		return nil, err
+		return "", "", err
 	}
 
+	return configDir, homeDir, nil
+}
+
+func initConfig(configDir string, homeDir string) (*db.Config, error) {
 	configPath := filepath.Join(configDir, "config.json")
 
 	// Migrate from legacy config path (~/.redis/config.json) if new config doesn't exist.

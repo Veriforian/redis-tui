@@ -372,3 +372,15 @@ type EditorSaveMsg struct {
 
 // EditorQuitMsg is sent when user quits vim editor (:q)
 type EditorQuitMsg struct{}
+
+// SecretStoreUnavailableMsg is sent when all secret stores in the chain are unavailable
+type SecretStoreUnavailableMsg struct{}
+
+// SecretStoreAvailableMsg is sent when at least one secret store in the chain becomes available
+type SecretStoreAvailableMsg struct{}
+
+// RequireMasterPasswordMsg is sent when the file-based secret store requires a master password to unlock
+type RequireMasterPasswordMsg struct{}
+
+// MasterPasswordErrorMsg is sent when there is an error unlocking the file-based secret store with the provided master password
+type MasterPasswordErrorMsg struct{ Err error }

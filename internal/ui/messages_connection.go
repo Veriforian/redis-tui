@@ -2,6 +2,7 @@ package ui
 
 import (
 	"log/slog"
+	"strings"
 
 	"github.com/davidbudnick/redis-tui/internal/types"
 
@@ -25,7 +26,10 @@ func (m Model) handleConnectionsLoadedMsg(msg types.ConnectionsLoadedMsg) (tea.M
 		m.StatusMsg = "Error: " + msg.Err.Error()
 	} else {
 		m.Connections = msg.Connections
-		m.StatusMsg = ""
+		// Only clear the status message if this isnt an intentional warning
+		if !strings.HasPrefix(m.StatusMsg, "Warning") {
+			m.StatusMsg = ""
+		}
 	}
 	return m, nil
 }

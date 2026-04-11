@@ -19,7 +19,7 @@ func TestAddToList(t *testing.T) {
 	})
 
 	t.Run("nil redis", func(t *testing.T) {
-		cmds := NewCommands(nil, nil)
+		cmds := NewCommands(nil, nil, nil)
 		msg := cmds.AddToList("list", "item")()
 		result := msg.(types.ItemAddedToCollectionMsg)
 		if result.Err != nil {

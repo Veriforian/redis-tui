@@ -19,17 +19,18 @@ var (
 	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
 	descStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
 	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+	warningStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
 	successStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	helpStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
 	// Pre-allocated type-color styles to avoid per-frame allocations
 	typeStyleMap = map[types.KeyType]lipgloss.Style{
-		types.KeyTypeString: lipgloss.NewStyle().Foreground(lipgloss.Color("2")),
-		types.KeyTypeList:   lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
-		types.KeyTypeSet:    lipgloss.NewStyle().Foreground(lipgloss.Color("4")),
-		types.KeyTypeZSet:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
-		types.KeyTypeHash:   lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
+		types.KeyTypeString:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")),
+		types.KeyTypeList:        lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
+		types.KeyTypeSet:         lipgloss.NewStyle().Foreground(lipgloss.Color("4")),
+		types.KeyTypeZSet:        lipgloss.NewStyle().Foreground(lipgloss.Color("5")),
+		types.KeyTypeHash:        lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
 		types.KeyTypeStream:      lipgloss.NewStyle().Foreground(lipgloss.Color("13")),
 		types.KeyTypeJSON:        lipgloss.NewStyle().Foreground(lipgloss.Color("208")),
 		types.KeyTypeHyperLogLog: lipgloss.NewStyle().Foreground(lipgloss.Color("9")),
@@ -37,11 +38,11 @@ var (
 		types.KeyTypeGeo:         lipgloss.NewStyle().Foreground(lipgloss.Color("10")),
 	}
 	typeStyleBoldMap = map[types.KeyType]lipgloss.Style{
-		types.KeyTypeString: lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true),
-		types.KeyTypeList:   lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true),
-		types.KeyTypeSet:    lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true),
-		types.KeyTypeZSet:   lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true),
-		types.KeyTypeHash:   lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true),
+		types.KeyTypeString:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true),
+		types.KeyTypeList:        lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true),
+		types.KeyTypeSet:         lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true),
+		types.KeyTypeZSet:        lipgloss.NewStyle().Foreground(lipgloss.Color("5")).Bold(true),
+		types.KeyTypeHash:        lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true),
 		types.KeyTypeStream:      lipgloss.NewStyle().Foreground(lipgloss.Color("13")).Bold(true),
 		types.KeyTypeJSON:        lipgloss.NewStyle().Foreground(lipgloss.Color("208")).Bold(true),
 		types.KeyTypeHyperLogLog: lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Bold(true),
@@ -161,12 +162,12 @@ func colorizeJSON(s string) string {
 	afterColon := false
 
 	// jq-style colors
-	jsonKeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))     // Blue for keys
-	stringStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("34"))      // Green for string values
-	jsonNumberStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("33"))  // Yellow for numbers
-	boolStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("35"))        // Magenta for booleans
-	jsonNullStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("90"))    // Gray for null
-	bracketStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))     // White for brackets
+	jsonKeyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("39"))    // Blue for keys
+	stringStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("34"))     // Green for string values
+	jsonNumberStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("33")) // Yellow for numbers
+	boolStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("35"))       // Magenta for booleans
+	jsonNullStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("90"))   // Gray for null
+	bracketStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))    // White for brackets
 
 	i := 0
 	for i < len(s) {

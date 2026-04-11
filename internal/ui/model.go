@@ -48,6 +48,12 @@ type Model struct {
 	SendFunc          *func(tea.Msg)
 	PendingSelectKey  string
 
+	// Config
+	ConfigDir string
+
+	// Secret Store
+	MasterPasswordInput textinput.Model
+
 	// New fields for additional features
 	VimEditor          vimtea.Editor
 	EditingIndex       int
@@ -202,41 +208,42 @@ const (
 
 func NewModel() Model {
 	return Model{
-		Screen:             types.ScreenConnections,
-		Connections:        []types.Connection{},
-		ConnInputs:         createConnectionInputs(),
-		Keys:               []types.RedisKey{},
-		AddKeyInputs:       createAddKeyInputs(),
-		AddCollectionInput: createAddCollectionInputs(),
-		PubSubInput:        createPubSubInputs(),
-		AddKeyType:         types.KeyTypeString,
-		SortBy:             "name",
-		SortAsc:            true,
-		TreeExpanded:       make(map[string]bool),
-		TreeSeparator:      ":",
-		SelectedBulkKeys:   make(map[string]bool),
-		WatchInterval:      time.Second * 2,
-		KeyBindings:        types.DefaultKeyBindings(),
-		ExpiryThreshold:    300,
-		PatternInput:       createTextInput("Filter pattern...", 40),
-		TTLInput:           createTextInput("TTL in seconds (-1 to remove)", 30),
-		RenameInput:        createTextInput("New key name", 40),
-		CopyInput:          createTextInput("New key name for copy", 40),
-		SearchValueInput:   createTextInput("Search in values...", 40),
-		ExportInput:        createTextInput("Export filename", 40),
-		ImportInput:        createTextInput("Import filename", 40),
-		LuaScriptInput:     createTextInput("Lua script", 60),
-		DBSwitchInput:      createTextInput("Database number (0-15)", 30),
-		BulkDeleteInput:    createTextInput("Pattern to delete (e.g., user:*)", 40),
-		BatchTTLInput:      createTextInput("TTL in seconds", 30),
-		BatchTTLPattern:    createTextInput("Key pattern", 40),
-		RegexSearchInput:   createTextInput("Regex pattern", 40),
-		FuzzySearchInput:   createTextInput("Fuzzy search...", 40),
-		CompareKey1Input:   createTextInput("First key", 40),
-		CompareKey2Input:   createTextInput("Second key", 40),
-		JSONPathInput:      createTextInput("JSONPath expression (e.g., $.name)", 40),
-		ConfigEditInput:    createTextInput("New value", 50),
-		inputsInitialized:  true,
+		Screen:              types.ScreenConnections,
+		Connections:         []types.Connection{},
+		ConnInputs:          createConnectionInputs(),
+		MasterPasswordInput: createMasterPasswordInput(),
+		Keys:                []types.RedisKey{},
+		AddKeyInputs:        createAddKeyInputs(),
+		AddCollectionInput:  createAddCollectionInputs(),
+		PubSubInput:         createPubSubInputs(),
+		AddKeyType:          types.KeyTypeString,
+		SortBy:              "name",
+		SortAsc:             true,
+		TreeExpanded:        make(map[string]bool),
+		TreeSeparator:       ":",
+		SelectedBulkKeys:    make(map[string]bool),
+		WatchInterval:       time.Second * 2,
+		KeyBindings:         types.DefaultKeyBindings(),
+		ExpiryThreshold:     300,
+		PatternInput:        createTextInput("Filter pattern...", 40),
+		TTLInput:            createTextInput("TTL in seconds (-1 to remove)", 30),
+		RenameInput:         createTextInput("New key name", 40),
+		CopyInput:           createTextInput("New key name for copy", 40),
+		SearchValueInput:    createTextInput("Search in values...", 40),
+		ExportInput:         createTextInput("Export filename", 40),
+		ImportInput:         createTextInput("Import filename", 40),
+		LuaScriptInput:      createTextInput("Lua script", 60),
+		DBSwitchInput:       createTextInput("Database number (0-15)", 30),
+		BulkDeleteInput:     createTextInput("Pattern to delete (e.g., user:*)", 40),
+		BatchTTLInput:       createTextInput("TTL in seconds", 30),
+		BatchTTLPattern:     createTextInput("Key pattern", 40),
+		RegexSearchInput:    createTextInput("Regex pattern", 40),
+		FuzzySearchInput:    createTextInput("Fuzzy search...", 40),
+		CompareKey1Input:    createTextInput("First key", 40),
+		CompareKey2Input:    createTextInput("Second key", 40),
+		JSONPathInput:       createTextInput("JSONPath expression (e.g., $.name)", 40),
+		ConfigEditInput:     createTextInput("New value", 50),
+		inputsInitialized:   true,
 	}
 }
 
@@ -328,9 +335,19 @@ func createPubSubInputs() []textinput.Model {
 	return inputs
 }
 
+func createMasterPasswordInput() textinput.Model {
+	pwInput := textinput.New()
+	pwInput.Placeholder = "Master Password"
+	pwInput.Focus()
+	pwInput.Width = 40
+	pwInput.EchoMode = textinput.EchoPassword
+
+	return pwInput
+}
+
 func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
-		m.Cmds.LoadConnections(),
+		m.Cmds.CheckSecretStore(),
 		m.Cmds.CheckVersion(m.Version),
 		func() tea.Msg { return tea.EnableBracketedPaste() },
 	}
