@@ -73,7 +73,7 @@ func (c *Commands) CopyToClipboard(content string) tea.Cmd {
 		if name == "" {
 			return types.ClipboardCopiedMsg{Content: content, Err: fmt.Errorf("no clipboard utility found (install pbcopy, xclip, or xsel)")}
 		}
-		cmd := exec.Command(name, args...)
+		cmd := exec.Command(name, args...) // #nosec G204 -- name/args from clipboardCmd() are hardcoded values
 		cmd.Stdin = strings.NewReader(content)
 		err := cmd.Run()
 		return types.ClipboardCopiedMsg{Content: content, Err: err}
