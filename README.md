@@ -25,15 +25,19 @@ go install github.com/davidbudnick/redis-tui@latest
 > **Pre-built binaries** — [Download from GitHub Releases](https://github.com/davidbudnick/redis-tui/releases)
 
 ## Screenshots
+
 ### Key Browser with Preview
+
 ![Main](docs/main.png)
 
 ### Live Metrics Dashboard
+
 ![Metrics](docs/metrics.png)
 
 ## Features
 
 ### Browsing and Editing
+
 - **Key browser** with pattern filtering, regex, and fuzzy search
 - **All data types** — strings, lists, sets, sorted sets, hashes, streams, JSON (RedisJSON), HyperLogLog, bitmaps, and geospatial
 - **Inline editing** with VIM keybindings for strings and collections
@@ -44,7 +48,8 @@ go install github.com/davidbudnick/redis-tui@latest
 - **JSON syntax highlighting**
 
 ### Connections and Security
-- **CLI quick connect** — pass `--host`, `--port`, `--password`, etc. to connect without a config file
+
+- **CLI quick connect** — pass `--host`, `--port`, `--username`, `--password`, etc. to connect without a config file
 - **Connection manager** — save and switch between multiple Redis instances
 - **TLS/SSL** encryption support
 - **SSH tunneling** for secure remote access
@@ -53,6 +58,7 @@ go install github.com/davidbudnick/redis-tui@latest
 - **Cluster support** — connect to any cluster node and press `K` to view all nodes, their roles (master/replica), slot ranges, and link state; cluster metrics in the live dashboard
 
 ### Monitoring and Operations
+
 - **Live metrics dashboard** — real-time ops/sec, memory, CPU, network I/O, hit rate, and client count with scrolling ASCII charts; cluster node count display
 - **Server info** — version, mode, OS, uptime, memory, and connected clients
 - **Memory stats** — detailed usage breakdown and top keys by memory consumption
@@ -138,23 +144,24 @@ Press `?` inside the app to view the full help screen.
 
 ### CLI Flags
 
-| Flag | Short | Description | Default |
-| --- | --- | --- | --- |
-| `--host` | `-h` | Redis server hostname | |
-| `--port` | `-p` | Redis server port | 6379 |
-| `--password` | `-a` | Redis password | |
-| `--db` | `-n` | Database number (0-15) | 0 |
-| `--name` | | Connection display name | `host:port` |
-| `--cluster` | | Enable cluster mode | false |
-| `--tls` | | Enable TLS/SSL | false |
-| `--tls-cert` | | TLS client certificate file | |
-| `--tls-key` | | TLS client private key file | |
-| `--tls-ca` | | TLS CA certificate file | |
-| `--tls-skip-verify` | | Skip TLS certificate verification | false |
-| `--scan-size` | | Redis SCAN COUNT hint (batch size for key scanning) | 1000 |
-| `--include-types` | | Fetch key types during scan (set false to skip) | true |
-| `--version` | | Print version and exit | |
-| `--update` | | Update to the latest version | |
+| Flag                | Short | Description                                         | Default     |
+| ------------------- | ----- | --------------------------------------------------- | ----------- |
+| `--host`            | `-h`  | Redis server hostname                               |             |
+| `--port`            | `-p`  | Redis server port                                   | 6379        |
+| `--password`        | `-a`  | Redis password                                      |             |
+| `--db`              | `-n`  | Database number (0-15)                              | 0           |
+| `--user`            |       | Redis username (For ACL enabled servers)            | default     |
+| `--name`            |       | Connection display name                             | `host:port` |
+| `--cluster`         |       | Enable cluster mode                                 | false       |
+| `--tls`             |       | Enable TLS/SSL                                      | false       |
+| `--tls-cert`        |       | TLS client certificate file                         |             |
+| `--tls-key`         |       | TLS client private key file                         |             |
+| `--tls-ca`          |       | TLS CA certificate file                             |             |
+| `--tls-skip-verify` |       | Skip TLS certificate verification                   | false       |
+| `--scan-size`       |       | Redis SCAN COUNT hint (batch size for key scanning) | 1000        |
+| `--include-types`   |       | Fetch key types during scan (set false to skip)     | true        |
+| `--version`         |       | Print version and exit                              |             |
+| `--update`          |       | Update to the latest version                        |             |
 
 Short flags (`-h`, `-p`, `-a`, `-n`) follow [redis-cli](https://redis.io/docs/latest/develop/connect/cli/) conventions.
 
@@ -176,55 +183,55 @@ rm -f $(go env GOPATH)/bin/redis-tui
 
 ### Global
 
-| Key | Action | Key | Action |
-| --- | --- | --- | --- |
-| `q` | Quit / Go back | `Ctrl+U/D` | Page up/down |
-| `?` | Show help | `g/G` | Go to top/bottom |
-| `j/k` | Navigate up/down | `home/end` | Go to top/bottom |
-| `Ctrl+C` | Force quit | | |
+| Key      | Action           | Key        | Action           |
+| -------- | ---------------- | ---------- | ---------------- |
+| `q`      | Quit / Go back   | `Ctrl+U/D` | Page up/down     |
+| `?`      | Show help        | `g/G`      | Go to top/bottom |
+| `j/k`    | Navigate up/down | `home/end` | Go to top/bottom |
+| `Ctrl+C` | Force quit       |            |                  |
 
 ### Connections Screen
 
-| Key | Action | Key | Action |
-| --- | --- | --- | --- |
+| Key     | Action              | Key                  | Action            |
+| ------- | ------------------- | -------------------- | ----------------- |
 | `Enter` | Connect to selected | `d/delete/backspace` | Delete connection |
-| `a/n` | Add new connection | `r` | Refresh list |
-| `e` | Edit connection | `Ctrl+T` | Test connection |
+| `a/n`   | Add new connection  | `r`                  | Refresh list      |
+| `e`     | Edit connection     | `Ctrl+T`             | Test connection   |
 
 ### Keys Screen
 
-| Key | Action | Key | Action |
-| --- | --- | --- | --- |
-| `Enter` | View key details | `O` | View logs |
-| `a/n` | Add new key | `B` | Bulk delete |
-| `d/delete/backspace` | Delete key | `T` | Batch set TTL |
-| `r` | Refresh keys | `F` | View favorites |
-| `l` | Load more keys | `W` | Tree view |
-| `/` | Filter by pattern | `Ctrl+R` | Regex search |
-| `s/S` | Sort / Toggle direction | `Ctrl+F` | Fuzzy search |
-| `v` | Search by value | `Ctrl+H` | Recent keys |
-| `e` | Export to JSON | `Ctrl+L` | Client list |
-| `I` | Import from JSON | `Ctrl+E` | Toggle keyspace events |
-| `i` | Server info | `Ctrl+X` | View expiring keys |
-| `D` | Switch database | `m` | Live metrics dashboard |
-| `f` | Flush database | `M` | Memory stats |
-| `p` | Pub/Sub channels | `K` | Cluster info |
-| `L` | View slow log | `=` | Compare keys |
-| `E` | Execute Lua script | `P` | Key templates |
-| `Ctrl+G` | Redis config | | |
+| Key                  | Action                  | Key      | Action                 |
+| -------------------- | ----------------------- | -------- | ---------------------- |
+| `Enter`              | View key details        | `O`      | View logs              |
+| `a/n`                | Add new key             | `B`      | Bulk delete            |
+| `d/delete/backspace` | Delete key              | `T`      | Batch set TTL          |
+| `r`                  | Refresh keys            | `F`      | View favorites         |
+| `l`                  | Load more keys          | `W`      | Tree view              |
+| `/`                  | Filter by pattern       | `Ctrl+R` | Regex search           |
+| `s/S`                | Sort / Toggle direction | `Ctrl+F` | Fuzzy search           |
+| `v`                  | Search by value         | `Ctrl+H` | Recent keys            |
+| `e`                  | Export to JSON          | `Ctrl+L` | Client list            |
+| `I`                  | Import from JSON        | `Ctrl+E` | Toggle keyspace events |
+| `i`                  | Server info             | `Ctrl+X` | View expiring keys     |
+| `D`                  | Switch database         | `m`      | Live metrics dashboard |
+| `f`                  | Flush database          | `M`      | Memory stats           |
+| `p`                  | Pub/Sub channels        | `K`      | Cluster info           |
+| `L`                  | View slow log           | `=`      | Compare keys           |
+| `E`                  | Execute Lua script      | `P`      | Key templates          |
+| `Ctrl+G`             | Redis config            |          |                        |
 
 ### Key Detail Screen
 
-| Key | Action | Key | Action |
-| --- | --- | --- | --- |
-| `e` | Edit value (string/json) | `r` | Refresh value |
-| `a` | Add to collection | `f` | Toggle favorite |
-| `x` | Remove from collection | `w` | Watch for changes |
-| `t` | Set TTL | `h` | View value history |
-| `R` | Rename key | `y` | Copy to clipboard |
-| `c` | Copy key | `J` | JSON path query |
-| `d/delete` | Delete key | `j/k` | Navigate collection items |
-| `esc/backspace` | Go back to keys list | | |
+| Key             | Action                   | Key   | Action                    |
+| --------------- | ------------------------ | ----- | ------------------------- |
+| `e`             | Edit value (string/json) | `r`   | Refresh value             |
+| `a`             | Add to collection        | `f`   | Toggle favorite           |
+| `x`             | Remove from collection   | `w`   | Watch for changes         |
+| `t`             | Set TTL                  | `h`   | View value history        |
+| `R`             | Rename key               | `y`   | Copy to clipboard         |
+| `c`             | Copy key                 | `J`   | JSON path query           |
+| `d/delete`      | Delete key               | `j/k` | Navigate collection items |
+| `esc/backspace` | Go back to keys list     |       |                           |
 
 </details>
 
@@ -256,6 +263,7 @@ Configuration is stored in `~/.config/redis-tui/config.json`.
       "name": "Standalone",
       "host": "localhost",
       "port": 6379,
+      "username": "default",
       "db": 0,
       "created_at": "2025-01-01T00:00:00Z",
       "updated_at": "2025-01-01T00:00:00Z"
@@ -394,27 +402,27 @@ Configuration is stored in `~/.config/redis-tui/config.json`.
 
 ### Connection Options
 
-| Option | Description |
-| --- | --- |
-| `name` | Display name for the connection |
-| `host` | Redis server hostname or IP |
-| `port` | Redis server port (default: 6379) |
-| `password` | Redis password (never saved to disk) |
-| `db` | Redis database number (0-15) |
-| `group` | Connection group name (optional) |
-| `color` | Display color for the connection (optional) |
-| `use_tls` | Enable TLS/SSL connection |
-| `tls_config.cert_file` | Client certificate file path |
-| `tls_config.key_file` | Client key file path |
-| `tls_config.ca_file` | CA certificate file path |
-| `tls_config.insecure_skip_verify` | Skip TLS certificate verification |
-| `tls_config.server_name` | TLS server name for verification |
-| `use_ssh` | Enable SSH tunneling |
-| `ssh_config.host` | SSH server hostname |
-| `ssh_config.port` | SSH server port |
-| `ssh_config.user` | SSH username |
-| `ssh_config.private_key_path` | Path to SSH private key file |
-| `use_cluster` | Enable Redis cluster mode |
+| Option                            | Description                                 |
+| --------------------------------- | ------------------------------------------- |
+| `name`                            | Display name for the connection             |
+| `host`                            | Redis server hostname or IP                 |
+| `port`                            | Redis server port (default: 6379)           |
+| `password`                        | Redis password (never saved to disk)        |
+| `db`                              | Redis database number (0-15)                |
+| `group`                           | Connection group name (optional)            |
+| `color`                           | Display color for the connection (optional) |
+| `use_tls`                         | Enable TLS/SSL connection                   |
+| `tls_config.cert_file`            | Client certificate file path                |
+| `tls_config.key_file`             | Client key file path                        |
+| `tls_config.ca_file`              | CA certificate file path                    |
+| `tls_config.insecure_skip_verify` | Skip TLS certificate verification           |
+| `tls_config.server_name`          | TLS server name for verification            |
+| `use_ssh`                         | Enable SSH tunneling                        |
+| `ssh_config.host`                 | SSH server hostname                         |
+| `ssh_config.port`                 | SSH server port                             |
+| `ssh_config.user`                 | SSH username                                |
+| `ssh_config.private_key_path`     | Path to SSH private key file                |
+| `use_cluster`                     | Enable Redis cluster mode                   |
 
 ### Custom Keybindings
 
