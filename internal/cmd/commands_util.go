@@ -15,10 +15,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// detectedOS is the runtime OS, overridable in tests.
+var detectedOS = runtime.GOOS
+
 // clipboardCmd returns the command name and args for the platform's clipboard
 // utility. Returns ("", nil) if none is available.
 func clipboardCmd() (string, []string) {
-	switch runtime.GOOS {
+	switch detectedOS {
 	case "darwin":
 		return "pbcopy", nil
 	case "windows":

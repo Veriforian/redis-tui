@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"runtime"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -217,6 +218,13 @@ func TestWatchKeyTick(t *testing.T) {
 	})
 }
 
+func withDetectedOS(t *testing.T, os string) {
+	t.Helper()
+	orig := detectedOS
+	detectedOS = os
+	t.Cleanup(func() { detectedOS = orig })
+}
+
 func TestCopyToClipboard(t *testing.T) {
 	t.Run("returns cmd", func(t *testing.T) {
 		cmds := NewCommands(nil, nil)
@@ -224,24 +232,93 @@ func TestCopyToClipboard(t *testing.T) {
 		if cmd == nil {
 			t.Fatal("expected non-nil cmd from CopyToClipboard")
 		}
-		// Execute the command - it may fail in CI if clipboard util is not available
 		msg := cmd()
 		result := msg.(types.ClipboardCopiedMsg)
 		if result.Content != "test content" {
 			t.Errorf("Content = %q, want %q", result.Content, "test content")
 		}
-		// Note: result.Err may be non-nil if clipboard util is unavailable (e.g. in CI)
+	})
+
+	t.Run("no clipboard utility", func(t *testing.T) {
+		withDetectedOS(t, "plan9")
+		cmds := NewCommands(nil, nil)
+		msg := cmds.CopyToClipboard("x")()
+		result := msg.(types.ClipboardCopiedMsg)
+		if result.Err == nil {
+			t.Error("expected error when no clipboard utility is found")
+		}
 	})
 }
 
 func TestClipboardCmd(t *testing.T) {
-	name, _ := clipboardCmd()
-	// On any supported platform, clipboardCmd should return a non-empty command.
-	// This test just verifies it doesn't panic and returns something plausible.
-	if runtime.GOOS == "darwin" && name != "pbcopy" {
-		t.Errorf("expected pbcopy on darwin, got %q", name)
-	}
-	if runtime.GOOS == "windows" && name != "clip" {
-		t.Errorf("expected clip on windows, got %q", name)
-	}
+	t.Run("darwin", func(t *testing.T) {
+		withDetectedOS(t, "darwin")
+		name, args := clipboardCmd()
+		if name != "pbcopy" {
+			t.Errorf("name = %q, want pbcopy", name)
+		}
+		if args != nil {
+			t.Errorf("args = %v, want nil", args)
+		}
+	})
+
+	t.Run("windows", func(t *testing.T) {
+		withDetectedOS(t, "windows")
+		name, args := clipboardCmd()
+		if name != "clip" {
+			t.Errorf("name = %q, want clip", name)
+		}
+		if args != nil {
+			t.Errorf("args = %v, want nil", args)
+		}
+	})
+
+	t.Run("linux with xclip", func(t *testing.T) {
+		withDetectedOS(t, "linux")
+
+		// Create a fake xclip in a temp dir and prepend it to PATH.
+		binDir := t.TempDir()
+		fakePath := filepath.Join(binDir, "xclip")
+		if err := os.WriteFile(fakePath, []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatalf("write fake xclip: %v", err)
+		}
+		t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+		name, args := clipboardCmd()
+		if name == "" {
+			t.Fatal("expected xclip to be found")
+		}
+		if len(args) != 2 || args[0] != "-selection" {
+			t.Errorf("args = %v, want [-selection clipboard]", args)
+		}
+	})
+
+	t.Run("linux with xsel only", func(t *testing.T) {
+		withDetectedOS(t, "linux")
+
+		// Create a fake xsel (but NOT xclip) in a temp dir.
+		binDir := t.TempDir()
+		fakePath := filepath.Join(binDir, "xsel")
+		if err := os.WriteFile(fakePath, []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatalf("write fake xsel: %v", err)
+		}
+		// Set PATH to ONLY this dir so xclip won't be found.
+		t.Setenv("PATH", binDir)
+
+		name, args := clipboardCmd()
+		if name == "" {
+			t.Fatal("expected xsel to be found")
+		}
+		if len(args) != 2 || args[0] != "--clipboard" {
+			t.Errorf("args = %v, want [--clipboard --input]", args)
+		}
+	})
+
+	t.Run("unsupported OS", func(t *testing.T) {
+		withDetectedOS(t, "plan9")
+		name, _ := clipboardCmd()
+		if name != "" {
+			t.Errorf("name = %q, want empty for unsupported OS", name)
+		}
+	})
 }
