@@ -145,25 +145,76 @@ func TestHasJSONModule(t *testing.T) {
 	}
 }
 
-func TestSeedJSON_Skipped(t *testing.T) {
+func TestSeedJSON_ErrorHandling(t *testing.T) {
 	_, rdb := setupMiniRedis(t)
 	// seedJSON uses JSON.SET which miniredis doesn't support —
-	// but the function handles errors gracefully.
+	// but the function handles errors gracefully (logs, doesn't crash).
 	seedJSON(context.Background(), rdb)
 }
 
 func TestMust_Success(t *testing.T) {
 	_, rdb := setupMiniRedis(t)
-	// must() should not panic for a successful command.
 	must(rdb.Set(context.Background(), "test-must", "val", 0))
 }
 
-func TestNewClusterClient(t *testing.T) {
+type mustPanic struct{}
+
+func TestMust_Error(t *testing.T) {
+	orig := logFatalf
+	logFatalf = func(string, ...any) { panic(mustPanic{}) }
+	t.Cleanup(func() { logFatalf = orig })
+
+	mr2, _ := setupMiniRedis(t)
+	addr := mr2.Addr()
+	mr2.Close() // close to make commands fail
+
+	rdb2 := redis.NewClient(&redis.Options{Addr: addr})
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(mustPanic); !ok {
+				panic(r)
+			}
+		}
+	}()
+	must(rdb2.Set(context.Background(), "key", "val", 0))
+	t.Fatal("expected panic from must()")
+}
+
+func TestNewClusterClient_Error(t *testing.T) {
+	orig := logFatalf
+	logFatalf = func(string, ...any) { panic(mustPanic{}) }
+	t.Cleanup(func() { logFatalf = orig })
+
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(mustPanic); !ok {
+				panic(r)
+			}
+		}
+	}()
+
+	// Use a closed miniredis so CLUSTER SLOTS fails.
 	mr, _ := setupMiniRedis(t)
-	// newClusterClient calls ClusterSlots which miniredis doesn't support.
-	// We just verify it doesn't panic for the error path.
-	// The function calls log.Fatalf on error, so we can't easily test it
-	// without subprocess tests. Instead, just verify the function exists
-	// and test our parsing logic.
-	_ = mr.Addr() // just use mr to avoid unused
+	addr := mr.Addr()
+	mr.Close()
+	_ = newClusterClient(context.Background(), addr)
+	t.Fatal("expected panic from newClusterClient")
+}
+
+func TestRunSeeds(t *testing.T) {
+	_, rdb := setupMiniRedis(t)
+	// runSeeds calls all seed functions — exercises the full flow.
+	runSeeds(context.Background(), rdb)
+}
+
+func TestFlushAll(t *testing.T) {
+	mr, rdb := setupMiniRedis(t)
+	// Seed some data first.
+	mr.Set("key1", "val1")
+
+	flushAll(context.Background(), rdb)
+
+	if mr.Exists("key1") {
+		t.Error("key1 should have been flushed")
+	}
 }

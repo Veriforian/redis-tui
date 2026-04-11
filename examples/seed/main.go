@@ -32,26 +32,34 @@ func main() {
 	}
 
 	if err := rdb.(interface{ Ping(context.Context) *redis.StatusCmd }).Ping(ctx).Err(); err != nil {
-		log.Fatalf("cannot connect to %s: %v", *addr, err)
+		logFatalf("cannot connect to %s: %v", *addr, err)
 	}
 	fmt.Printf("Connected to %s\n", *addr)
 
 	if *flush {
-		switch c := rdb.(type) {
-		case *redis.Client:
-			if err := c.FlushAll(ctx).Err(); err != nil {
-				log.Fatalf("flush failed: %v", err)
-			}
-		case *redis.ClusterClient:
-			if err := c.ForEachMaster(ctx, func(ctx context.Context, client *redis.Client) error {
-				return client.FlushAll(ctx).Err()
-			}); err != nil {
-				log.Fatalf("flush failed: %v", err)
-			}
-		}
-		fmt.Println("Flushed existing data")
+		flushAll(ctx, rdb)
 	}
 
+	runSeeds(ctx, rdb)
+}
+
+func flushAll(ctx context.Context, rdb redis.Cmdable) {
+	switch c := rdb.(type) {
+	case *redis.Client:
+		if err := c.FlushAll(ctx).Err(); err != nil {
+			logFatalf("flush failed: %v", err)
+		}
+	case *redis.ClusterClient:
+		if err := c.ForEachMaster(ctx, func(ctx context.Context, client *redis.Client) error {
+			return client.FlushAll(ctx).Err()
+		}); err != nil {
+			logFatalf("flush failed: %v", err)
+		}
+	}
+	fmt.Println("Flushed existing data")
+}
+
+func runSeeds(ctx context.Context, rdb redis.Cmdable) {
 	seedStrings(ctx, rdb)
 	seedLists(ctx, rdb)
 	seedSets(ctx, rdb)
@@ -90,7 +98,7 @@ func newClusterClient(ctx context.Context, addr string) *redis.ClusterClient {
 
 	slots, err := node.ClusterSlots(ctx).Result()
 	if err != nil {
-		log.Fatalf("cannot read cluster slots from %s: %v", addr, err)
+		logFatalf("cannot read cluster slots from %s: %v", addr, err)
 	}
 
 	for i := range slots {
@@ -345,8 +353,11 @@ func seedJSON(ctx context.Context, rdb redis.Cmdable) {
 	fmt.Printf("  json (native): %d keys\n", len(jsons))
 }
 
+// logFatalf is overridable in tests to avoid os.Exit.
+var logFatalf = log.Fatalf
+
 func must(cmd interface{ Err() error }) {
 	if cmd.Err() != nil {
-		log.Fatalf("redis command failed: %v", cmd.Err())
+		logFatalf("redis command failed: %v", cmd.Err())
 	}
 }
