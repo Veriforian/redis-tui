@@ -9,13 +9,15 @@ import (
 type Commands struct {
 	config service.ConfigService
 	redis  service.RedisService
+	store  service.StoreService
 }
 
 // NewCommands creates a new Commands instance with the provided services.
-func NewCommands(config service.ConfigService, redis service.RedisService) *Commands {
+func NewCommands(config service.ConfigService, redis service.RedisService, store service.StoreService) *Commands {
 	return &Commands{
 		config: config,
 		redis:  redis,
+		store:  store,
 	}
 }
 
@@ -24,5 +26,6 @@ func NewCommandsFromContainer(c *service.Container) *Commands {
 	return &Commands{
 		config: c.Config,
 		redis:  c.Redis,
+		store:  c.Store,
 	}
 }

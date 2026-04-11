@@ -5,13 +5,15 @@ package service
 type Container struct {
 	Config ConfigService
 	Redis  RedisService
+	Store  StoreService
 }
 
 // NewContainer creates a new service container with the provided services.
-func NewContainer(config ConfigService, redis RedisService) *Container {
+func NewContainer(config ConfigService, redis RedisService, store StoreService) *Container {
 	return &Container{
 		Config: config,
 		Redis:  redis,
+		Store:  store,
 	}
 }
 

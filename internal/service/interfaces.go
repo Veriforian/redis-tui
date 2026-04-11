@@ -164,3 +164,10 @@ type RedisService interface {
 	// Configuration
 	SetIncludeTypes(v bool)
 }
+
+type StoreService interface {
+	Name() string
+	Get(service, user string) ([]byte, error)
+	Set(service, user string, pwd []byte) error
+	Delete(service, user string) error
+}
