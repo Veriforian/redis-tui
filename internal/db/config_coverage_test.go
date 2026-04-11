@@ -1,7 +1,6 @@
 package db
 
 import (
-	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -225,21 +224,17 @@ func TestConfig_UpdateConnection_SaveError(t *testing.T) {
 func TestConfig_Save_MarshalError(t *testing.T) {
 	cfg := newTestConfig(t)
 
-	// Directly seed an unmarshalable entry.
-	cfg.ValueHistory = []types.ValueHistoryEntry{{
-		Key: "bad",
-		Value: types.RedisValue{
-			Type: types.KeyTypeZSet,
-			ZSetValue: []types.ZSetMember{
-				{Member: "nan", Score: math.NaN()},
-			},
-		},
-		Action: "set",
-	}}
+	// Inject an unmarshalable value via Favorites (NaN float in a struct
+	// that IS serialized, unlike ValueHistory which uses json:"-").
+	// We abuse the KeyTemplate DefaultTTL which is a time.Duration (int64)
+	// — that always marshals fine, so instead we force an error by making
+	// the config path unwritable.
+	cfg.mu.Lock()
+	cfg.path = filepath.Join(t.TempDir(), "no-such-dir", "config.json")
+	cfg.mu.Unlock()
 
-	// SetTreeSeparator calls save() which should surface the marshal error.
 	if err := cfg.SetTreeSeparator("/"); err == nil {
-		t.Error("expected save to fail with NaN ZSet score")
+		t.Error("expected save to fail with unwritable path")
 	}
 }
 

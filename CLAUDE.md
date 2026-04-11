@@ -90,6 +90,7 @@ internal/
 - **JSON tags on `types.Connection`** — changing JSON tags (especially to `json:"-"`) will break persistence. Round-trip tests in `config_test.go` enforce this.
 - **Password stripping** — `save()` in `config.go` intentionally strips `Connection.Password`, `SSHConfig.Password`, and `SSHConfig.Passphrase` before writing to disk. This is a security invariant tested by `TestConfig_Persistence_PasswordStripping` and `TestConfig_Persistence_SSHPasswordStripping`. Never bypass this.
 - **`UpdateConnection` field preservation** — `UpdateConnection()` preserves `Group`, `Color`, `UseSSH`, `SSHConfig`, `UseTLS`, `TLSConfig` from the existing connection. This is tested and must not regress.
+- **SSH tunneling** — `UseSSH`, `SSHConfig`, `ScreenSSHTunnel`, and `SSHTunnelConnectedMsg` are defined and persisted but not yet implemented (no SSH client code exists). These fields are intentionally kept for future implementation. Do not remove them.
 
 ## Release
 
