@@ -360,6 +360,30 @@ func TestReconnectCycle(t *testing.T) {
 	}
 }
 
+func TestConnectCluster_WithTLSSuccess(t *testing.T) {
+	client := NewClient()
+	t.Cleanup(func() { _ = client.Disconnect() })
+
+	// Use a valid (empty) TLS config — BuildTLSConfig succeeds with no certs.
+	// The cluster Ping will fail (no server), but opts.TLSConfig is set.
+	conn := types.Connection{
+		Name:      "cluster-tls-ok",
+		Host:      "127.0.0.1",
+		Port:      1,
+		UseTLS:    true,
+		TLSConfig: &types.TLSConfig{InsecureSkipVerify: true},
+	}
+
+	err := client.ConnectCluster([]string{"127.0.0.1:1"}, conn)
+	// Expect a connection error (no server), not a TLS build error.
+	if err == nil {
+		t.Fatal("expected connection error, got nil")
+	}
+	if strings.Contains(err.Error(), "TLS") {
+		t.Errorf("unexpected TLS error — BuildTLSConfig should have succeeded: %v", err)
+	}
+}
+
 func TestConnectCluster_WithTLSErrors(t *testing.T) {
 	t.Run("TLS requested but config is missing", func(t *testing.T) {
 		dummyAddrs := []string{"127.0.0.1:7000"}
