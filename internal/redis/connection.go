@@ -33,6 +33,7 @@ func defaultOptions(conn types.Connection) (*redis.Options, error) {
 
 	return &redis.Options{
 		Addr:         fmt.Sprintf("%s:%d", conn.Host, conn.Port),
+		Username:     conn.Username,
 		Password:     conn.Password,
 		DB:           conn.DB,
 		DialTimeout:  defaultDialTimeout,
@@ -75,6 +76,7 @@ func (c *Client) Connect(conn types.Connection) error {
 	c.mu.Lock()
 	c.host = conn.Host
 	c.port = conn.Port
+	c.username = conn.Username
 	c.password = conn.Password
 	c.db = conn.DB
 	c.client = client
@@ -103,6 +105,7 @@ func (c *Client) ConnectCluster(addrs []string, conn types.Connection) error {
 
 	opts := &redis.ClusterOptions{
 		Addrs:        addrs,
+		Username:     conn.Username,
 		Password:     conn.Password,
 		DialTimeout:  defaultDialTimeout,
 		ReadTimeout:  defaultReadTimeout,
@@ -134,6 +137,7 @@ func (c *Client) ConnectCluster(addrs []string, conn types.Connection) error {
 
 	c.mu.Lock()
 	c.isCluster = true
+	c.username = conn.Username
 	c.password = conn.Password
 	c.host = host
 	c.port = port

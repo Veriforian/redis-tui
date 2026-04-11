@@ -51,7 +51,7 @@ func TestConnect(t *testing.T) {
 	client := NewClient()
 	port, _ := strconv.Atoi(mr.Port())
 
-	if err := client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Password: "", DB: 0, UseCluster: false}); err != nil {
+	if err := client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "default", Password: "", DB: 0, UseCluster: false}); err != nil {
 		t.Fatalf("Connect() returned error: %v", err)
 	}
 	t.Cleanup(func() { _ = client.Disconnect() })
@@ -78,10 +78,28 @@ func TestConnect_WrongPassword(t *testing.T) {
 	client := NewClient()
 	port, _ := strconv.Atoi(mr.Port())
 
-	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Password: "wrong-password", DB: 0, UseCluster: false})
+	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "default", Password: "wrong-password", DB: 0, UseCluster: false})
 	if err == nil {
 		_ = client.Disconnect()
 		t.Fatal("expected error when connecting with wrong password")
+	}
+}
+
+func TestConnect_WrongUsernamePassword(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+	mr.RequireUserAuth("testuser", "correct-password")
+
+	client := NewClient()
+	port, _ := strconv.Atoi(mr.Port())
+
+	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "wrong-user", Password: "wrong-password", DB: 0, UseCluster: false})
+	if err == nil {
+		_ = client.Disconnect()
+		t.Fatal("expected error when connecting with wrong username and password")
 	}
 }
 
@@ -130,9 +148,27 @@ func TestConnect_CorrectPassword(t *testing.T) {
 	client := NewClient()
 	port, _ := strconv.Atoi(mr.Port())
 
-	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Password: "correct-password", DB: 0, UseCluster: false})
+	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "default", Password: "correct-password", DB: 0, UseCluster: false})
 	if err != nil {
 		t.Fatalf("Connect() with correct password returned error: %v", err)
+	}
+	t.Cleanup(func() { _ = client.Disconnect() })
+}
+
+func TestConnect_CorrectUserPassword(t *testing.T) {
+	mr, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to start miniredis: %v", err)
+	}
+	t.Cleanup(mr.Close)
+	mr.RequireUserAuth("testuser", "correct-password")
+
+	client := NewClient()
+	port, _ := strconv.Atoi(mr.Port())
+
+	err = client.Connect(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "testuser", Password: "correct-password", DB: 0, UseCluster: false})
+	if err != nil {
+		t.Fatalf("Connect() with correct username/password returned error: %v", err)
 	}
 	t.Cleanup(func() { _ = client.Disconnect() })
 }
