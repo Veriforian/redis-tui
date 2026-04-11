@@ -29,6 +29,7 @@ type Client struct {
 
 	host     string
 	port     int
+	username string
 	password string
 	db       int
 

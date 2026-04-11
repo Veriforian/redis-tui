@@ -252,6 +252,36 @@ func TestTestConnection(t *testing.T) {
 		}
 	})
 
+	t.Run("successful connection with username / password returns latency", func(t *testing.T) {
+		client, mr := setupTestClientWithAuth(t, "testuser", "testpass")
+
+		port, err := strconv.Atoi(mr.Port())
+		if err != nil {
+			t.Fatalf("failed to parse port: %v", err)
+		}
+
+		latency, err := client.TestConnection(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "testuser", Password: "testpass", DB: 0, UseCluster: false})
+		if err != nil {
+			t.Fatalf("TestConnection() error = %v", err)
+		}
+		if latency <= 0 {
+			t.Errorf("TestConnection() latency = %v, want > 0", latency)
+		}
+	})
+
+	t.Run("wrong username / password returns error", func(t *testing.T) {
+		client, mr := setupTestClientWithAuth(t, "testuser", "testpass")
+
+		port, err := strconv.Atoi(mr.Port())
+		if err != nil {
+			t.Fatalf("failed to parse port: %v", err)
+		}
+
+		if _, err := client.TestConnection(types.Connection{Name: "test", Host: mr.Host(), Port: port, Username: "baduser", Password: "badpass", DB: 0, UseCluster: false}); err == nil {
+			t.Fatal("TestConnection() expected error for wrong username/password, got nil")
+		}
+	})
+
 	t.Run("wrong port returns error", func(t *testing.T) {
 		client, _ := setupTestClient(t)
 
@@ -383,29 +413,29 @@ func TestTestConnection(t *testing.T) {
 	})
 
 	t.Run("failed to build TLS config", func(t *testing.T) {
+		client := NewClient()
+
+		conn := types.Connection{
+			Name:   "tls-build-error",
+			Host:   "localhost",
+			Port:   6379,
+			UseTLS: true,
+			TLSConfig: &types.TLSConfig{
+				CertFile: "/path/to/nowhere/cert.pem",
+				KeyFile:  "/path/to/nowhere/key.pem",
+			},
+		}
+
+		_, err := client.TestConnection(conn)
+		if err == nil {
+			t.Fatal("expected error, got nil")
+		}
+
+		if !strings.Contains(err.Error(), "failed to build TLS config") &&
+			!strings.Contains(err.Error(), "failed to load TLS key pair") {
+			t.Errorf("unexpected error message: %v", err)
+		}
 	})
-	client := NewClient()
-
-	conn := types.Connection{
-		Name:   "tls-build-error",
-		Host:   "localhost",
-		Port:   6379,
-		UseTLS: true,
-		TLSConfig: &types.TLSConfig{
-			CertFile: "/path/to/nowhere/cert.pem",
-			KeyFile:  "/path/to/nowhere/key.pem",
-		},
-	}
-
-	_, err := client.TestConnection(conn)
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
-
-	if !strings.Contains(err.Error(), "failed to build TLS config") &&
-		!strings.Contains(err.Error(), "failed to load TLS key pair") {
-		t.Errorf("unexpected error message: %v", err)
-	}
 }
 
 // ---------------------------------------------------------------------------
