@@ -303,11 +303,11 @@ func (m Model) viewEditConnection() string {
 	return lipgloss.Place(m.Width, m.Height, lipgloss.Center, lipgloss.Center, modalStyle.Render(b.String()))
 }
 
-// renderConnForm renders the shared connection form fields (name, host, port, password, cluster toggle, database).
+// renderConnForm renders the shared connection form fields (name, host, port, username, password, cluster toggle, database).
 func (m Model) renderConnForm() string {
 	var b strings.Builder
 
-	// Fields 0-3: Name, Host, Port, Password (text inputs)
+	// Fields 0-4: Name, Host, Port, Username, Password (text inputs)
 	textLabels := []string{"Name", "Host", "Port", "Username", "Password"}
 	for i := range textLabels {
 		labelStyle := keyStyle

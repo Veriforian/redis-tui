@@ -268,7 +268,8 @@ func createConnectionInputs() []textinput.Model {
 	inputs[3] = textinput.New()
 	inputs[3].Placeholder = "Username (optional)"
 	inputs[3].Width = 30
-	inputs[3].SetValue("6379")
+	inputs[3].SetValue("default")
+
 	inputs[4] = textinput.New()
 	inputs[4].Placeholder = "Password (optional)"
 	inputs[4].Width = 30
@@ -356,7 +357,7 @@ func (m Model) getPort() int {
 }
 
 func (m Model) getDB() int {
-	db, err := strconv.Atoi(m.ConnInputs[4].Value())
+	db, err := strconv.Atoi(m.ConnInputs[5].Value())
 	if err != nil {
 		return 0
 	}
@@ -420,8 +421,8 @@ func (m *Model) convertCurrentInputsToConnection(inputs []textinput.Model, actio
 }
 
 // connFieldCount returns the number of focusable fields in the connection form.
-// When cluster mode is on, the DB field is skipped (5 fields: name, host, port, password, cluster toggle).
-// Otherwise there are 6 fields: name, host, port, password, cluster toggle, database.
+// When cluster mode is on, the DB field is skipped (6 fields: name, host, port, username, password, cluster toggle).
+// Otherwise there are 7 fields: name, host, port, username, password, cluster toggle, database.
 func (m Model) connFieldCount() int {
 	if m.ConnClusterMode {
 		return 6
