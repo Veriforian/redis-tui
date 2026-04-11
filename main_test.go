@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -321,5 +324,49 @@ func TestParseFlags_Defaults(t *testing.T) {
 	}
 	if !includeTypes {
 		t.Error("expected includeTypes=true by default")
+	}
+}
+
+func TestParseFlags_PasswordWarning(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      []string
+		wantWarn  bool
+	}{
+		{"short flag -a", []string{"-h", "localhost", "-a", "secret"}, true},
+		{"long flag --password", []string{"--host", "localhost", "--password", "secret"}, true},
+		{"no password flag", []string{"--host", "localhost"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Capture stderr
+			oldStderr := os.Stderr
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Fatalf("failed to create pipe: %v", err)
+			}
+			os.Stderr = w
+
+			_, _, _, _, _, parseErr := parseFlags(tt.args)
+			if parseErr != nil {
+				os.Stderr = oldStderr
+				t.Fatalf("unexpected error: %v", parseErr)
+			}
+
+			if err := w.Close(); err != nil {
+				t.Fatalf("failed to close writer: %v", err)
+			}
+			var buf bytes.Buffer
+			if _, err := buf.ReadFrom(r); err != nil {
+				t.Fatalf("failed to read pipe: %v", err)
+			}
+			os.Stderr = oldStderr
+
+			gotWarn := strings.Contains(buf.String(), "process list")
+			if gotWarn != tt.wantWarn {
+				t.Errorf("warning present = %v, want %v (stderr: %q)", gotWarn, tt.wantWarn, buf.String())
+			}
+		})
 	}
 }

@@ -157,6 +157,13 @@ func parseFlags(args []string) (conn *types.Connection, showVersion bool, doUpda
 		return nil, false, false, *scanSizeFlag, *includeTypesFlag, nil
 	}
 
+	// Warn if password was passed on the command line — it is visible via ps(1).
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "password" || f.Name == "a" {
+			fmt.Fprintln(os.Stderr, "Warning: Using a password via -a/--password exposes it in the process list. Consider using the interactive connection form instead.")
+		}
+	})
+
 	conn = &types.Connection{
 		Host:       *host,
 		Port:       *port,
