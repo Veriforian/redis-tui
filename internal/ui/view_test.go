@@ -101,7 +101,7 @@ func TestRenderConnForm(t *testing.T) {
 		}
 	})
 	t.Run("focus on each field", func(t *testing.T) {
-		for i := 0; i <= 5; i++ {
+		for i := 0; i <= 6; i++ {
 			m, _, _ := newTestModel(t)
 			m.ConnFocusIdx = i
 			assertNonEmpty(t, "focus", m.renderConnForm())
