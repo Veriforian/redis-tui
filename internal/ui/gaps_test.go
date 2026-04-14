@@ -78,6 +78,7 @@ func TestHandleAddConnectionScreen_ClusterFocusOverflow(t *testing.T) {
 	m.ConnFocusIdx = 4
 	_, _ = m.handleAddConnectionScreen(tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}})
 	// Now cluster is on — re-toggle with focus still valid
+	m.ConnClusterMode = true // Have to set this manually
 	_, _ = m.handleAddConnectionScreen(tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}})
 }
 
