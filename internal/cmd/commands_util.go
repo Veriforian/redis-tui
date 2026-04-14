@@ -18,7 +18,6 @@ import (
 // detectedOS is the runtime OS, overridable in tests.
 var (
 	detectedOS = runtime.GOOS
-	lookPath   = exec.LookPath
 )
 
 // clipboardCmd returns the command name and args for the platform's clipboard
@@ -30,10 +29,10 @@ func clipboardCmd() (string, []string) {
 	case "windows":
 		return "clip", nil
 	default: // linux, freebsd, etc.
-		if path, err := lookPath("xclip"); err == nil {
+		if path, err := exec.LookPath("xclip"); err == nil {
 			return path, []string{"-selection", "clipboard"}
 		}
-		if path, err := lookPath("xsel"); err == nil {
+		if path, err := exec.LookPath("xsel"); err == nil {
 			return path, []string{"--clipboard", "--input"}
 		}
 		return "", nil
