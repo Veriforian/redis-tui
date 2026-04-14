@@ -20,7 +20,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: "1.26"
           cache: true
 
       - name: Download dependencies
@@ -30,19 +30,36 @@ jobs:
         run: go test -v -race -coverprofile=coverage.out ./...
 
       - name: Enforce 100% coverage
+        shell: bash
         run: |
-          go tool cover -func=coverage.out | while IFS= read -r line; do
-            pkg=$(echo "$line" | awk '{print $1}')
-            func=$(echo "$line" | awk '{print $2}')
-            pct=$(echo "$line" | awk '{print $NF}' | tr -d '%')
-            if [ "$func" = "(statements)" ] && [ "$pkg" != "total:" ]; then
-              if [ "$(echo "$pct < 100.0" | bc -l)" = "1" ]; then
-                echo "FAIL: $pkg coverage is ${pct}%, required 100%"
-                exit 1
+          set -euo pipefail
+          FAILED=0
+
+          while IFS= read -r line; do
+              func=$(echo "$line" | awk '{print $2}')
+              pct=$(echo "$line" | awk '{print $NF}' | tr -d '%')
+
+              if [[ "$func" == "(statements)" ]]; then
+                  continue
               fi
-            fi
-          done
-          echo "All packages at 100% coverage"
+
+              if (( $(echo "$pct < 100.0" | bc -l) )); then
+                  location=$(echo "$line" | awk '{print $1}')
+                  file=$(echo "$location" | cut -d':' -f1)
+                  line_num=$(echo "$location" | cut -d':' -f2)
+                  
+                  # Generate an inline PR annotation for the failure
+                  echo "::error file=$file,line=$line_num::Function $func coverage is ${pct}%, required 100%"
+                  FAILED=1
+              fi
+          done < <(go tool cover -func=coverage.out)
+
+          if [[ $FAILED -eq 1 ]]; then
+              echo "Coverage enforcement failed."
+              exit 1
+          fi
+
+          echo "All functions at 100% coverage"
 
       - name: Upload coverage
         uses: codecov/codecov-action@v6
@@ -67,7 +84,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: "1.26"
           cache: true
 
       - name: Build
