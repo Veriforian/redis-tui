@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -228,6 +227,15 @@ func withDetectedOS(t *testing.T, os string) {
 
 func TestCopyToClipboard(t *testing.T) {
 	t.Run("returns cmd", func(t *testing.T) {
+		withDetectedOS(t, "linux")
+		binDir := t.TempDir()
+		fakePath := filepath.Join(binDir, "xclip")
+		if err := os.WriteFile(fakePath, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+			t.Fatalf("write fake xclip: %v", err)
+		}
+
+		t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
 		cmds := NewCommands(nil, nil)
 		cmd := cmds.CopyToClipboard("test content")
 		if cmd == nil {
@@ -235,8 +243,12 @@ func TestCopyToClipboard(t *testing.T) {
 		}
 		msg := cmd()
 		result := msg.(types.ClipboardCopiedMsg)
+
 		if result.Content != "test content" {
 			t.Errorf("Content = %q, want %q", result.Content, "test content")
+		}
+		if result.Err != nil {
+			t.Errorf("unexpected error: %v", result.Err)
 		}
 	})
 
@@ -249,31 +261,6 @@ func TestCopyToClipboard(t *testing.T) {
 			t.Error("expected error when no clipboard utility is found")
 		}
 	})
-}
-
-func TestClipboardCmd_Linux_Xclip(t *testing.T) {
-	origOS := detectedOS
-	detectedOS = "linux"
-	defer func() { detectedOS = origOS }()
-
-	origLookPath := lookPath
-	defer func() { lookPath = origLookPath }()
-
-	lookPath = func(file string) (string, error) {
-		if file == "xclip" {
-			return "/usr/bin/xclip", nil
-		}
-		return "", errors.New("executable file not found in $PATH")
-	}
-
-	cmd, args := clipboardCmd()
-
-	if cmd != "/usr/bin/xclip" {
-		t.Errorf("expected /usr/bin/xclip, got %s", cmd)
-	}
-	if len(args) == 0 || args[0] != "-selection" {
-		t.Errorf("unexpected args: %v", args)
-	}
 }
 
 func TestClipboardCmd(t *testing.T) {
