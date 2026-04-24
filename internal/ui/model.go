@@ -348,6 +348,7 @@ func (m Model) Init() tea.Cmd {
 		m.Cmds.LoadConnections(),
 		m.Cmds.CheckVersion(m.Version),
 		func() tea.Msg { return tea.EnableBracketedPaste() },
+		tickCmd(),
 	}
 	if m.CLIConnection != nil {
 		conn := *m.CLIConnection

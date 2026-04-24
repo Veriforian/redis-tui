@@ -103,7 +103,7 @@ func (m Model) handleConnectedMsg(msg types.ConnectedMsg) (tea.Model, tea.Cmd) {
 	if m.SendFunc != nil {
 		sendFunc = *m.SendFunc
 	}
-	cmds := []tea.Cmd{m.Cmds.LoadKeys(m.KeyPattern, 0, m.ScanSize), m.Cmds.SubscribeKeyspace("*", sendFunc), tickCmd()}
+	cmds := []tea.Cmd{m.Cmds.LoadKeys(m.KeyPattern, 0, m.ScanSize), m.Cmds.SubscribeKeyspace("*", sendFunc)}
 	if m.CurrentConn != nil && m.CurrentConn.UseCluster {
 		cmds = append(cmds, m.Cmds.FetchClusterNodes())
 	}
